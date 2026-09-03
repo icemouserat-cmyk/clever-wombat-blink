@@ -335,8 +335,6 @@ export default function QuoteEditorPage() {
               </Button>
             </div>
           </div>
-          </div>
-
           <div className="bg-white p-6 rounded-xl border shadow-sm space-y-4">
             <h3 className="font-semibold text-slate-800 flex items-center gap-2">
               <Package className="w-4 h-4" /> Add Items
