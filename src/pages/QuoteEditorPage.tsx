@@ -240,7 +240,7 @@ export default function QuoteEditorPage() {
         </div>
         <div className="flex gap-3">
           <Button
-            onClick={saveQuote}
+            onClick={() => saveQuote()}
             disabled={isSaving}
             className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2"
           >
