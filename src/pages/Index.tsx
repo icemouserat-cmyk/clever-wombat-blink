@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  TrendingUp, 
-  Clock, 
-  CheckCircle2, 
-  Timer, 
-  ArrowUpRight, 
-  AlertCircle 
+import {
+  TrendingUp,
+  Clock,
+  CheckCircle2,
+  Timer,
+  ArrowUpRight,
+  AlertCircle,
+  FileText,
+  Plus,
+  DollarSign
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 
@@ -244,5 +248,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-import { FileText, Plus, DollarSign } from 'lucide-react';
