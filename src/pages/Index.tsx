@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  TrendingUp,
-  Clock,
-  CheckCircle2,
-  Timer,
-  ArrowUpRight,
+import { 
+  TrendingUp, 
+  Clock, 
+  CheckCircle2, 
+  Timer, 
+  ArrowUpRight, 
   AlertCircle,
   FileText,
   Plus,
@@ -55,6 +56,7 @@ function KPICard({ title, value, icon, description, trend, status }: KPIProps) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [kpis, setKpis] = useState<{
     sent: number;
     turnaround: string;
@@ -76,7 +78,6 @@ export default function Dashboard() {
       const startDay = startOfDay(new Date());
       const endDay = endOfDay(new Date());
 
-      // 1. Quotes Sent this week
       const { data: sentQuotes, error: sentError } = await supabase
         .from('quotations')
         .select('id, created_at, sent_at')
@@ -85,7 +86,6 @@ export default function Dashboard() {
       
       if (sentError) throw sentError;
 
-      // 2. Turnaround Time (Avg sent_at - created_at)
       let avgTurnaround = 0;
       if (sentQuotes && sentQuotes.length > 0) {
         const totalMs = sentQuotes.reduce((acc, q) => {
@@ -94,7 +94,6 @@ export default function Dashboard() {
         avgTurnaround = totalMs / sentQuotes.length;
       }
 
-      // 3. Conversion Rate (Order / Sent)
       const { data: allSent, error: allSentError } = await supabase
         .from('quotations')
         .select('status')
@@ -106,7 +105,6 @@ export default function Dashboard() {
       const sent = allSent?.length || 0;
       const conversionRate = sent > 0 ? ((orders / sent) * 100).toFixed(1) : '0';
 
-      // 4. Active Minutes today
       const { data: timeLogs, error: logsError } = await supabase
         .from('founder_time_logs')
         .select('duration_minutes')
@@ -116,7 +114,6 @@ export default function Dashboard() {
       if (logsError) throw logsError;
       const totalMinutes = timeLogs?.reduce((acc, log) => acc + (log.duration_minutes || 0), 0) || 0;
 
-      // Recent Activity
       const { data: activity, error: actError } = await supabase
         .from('quotations')
         .select('*, customers(name)')
@@ -220,7 +217,10 @@ export default function Dashboard() {
               <p className="text-indigo-100 text-sm leading-relaxed">
                 "Focus on Custom items first. A3 approvals are the main bottleneck in the current pipeline."
               </p>
-              <Button className="w-full bg-white text-indigo-900 hover:bg-indigo-50 font-bold rounded-xl">
+              <Button 
+                onClick={() => navigate('/quotations')} 
+                className="w-full bg-white text-indigo-900 hover:bg-indigo-50 font-bold rounded-xl"
+              >
                 Open AI Advisor
               </Button>
             </div>
@@ -232,13 +232,25 @@ export default function Dashboard() {
           <div className="bg-white rounded-2xl border p-6 shadow-sm space-y-4">
             <h3 className="font-semibold text-slate-800">Quick Actions</h3>
             <div className="grid grid-cols-1 gap-2">
-              <Button variant="outline" className="justify-start rounded-lg text-slate-600 hover:bg-slate-50">
+              <Button 
+                variant="outline" 
+                className="justify-start rounded-lg text-slate-600 hover:bg-slate-50"
+                onClick={() => navigate('/inquiries')}
+              >
                 <Plus className="w-4 h-4 mr-2" /> New Inquiry
               </Button>
-              <Button variant="outline" className="justify-start rounded-lg text-slate-600 hover:bg-slate-50">
+              <Button 
+                variant="outline" 
+                className="justify-start rounded-lg text-slate-600 hover:bg-slate-50"
+                onClick={() => navigate('/quotations/new')}
+              >
                 <FileText className="w-4 h-4 mr-2" /> Draft Quote
               </Button>
-              <Button variant="outline" className="justify-start rounded-lg text-slate-600 hover:bg-slate-50">
+              <Button 
+                variant="outline" 
+                className="justify-start rounded-lg text-slate-600 hover:bg-slate-50"
+                onClick={() => navigate('/settings/pricing')}
+              >
                 <DollarSign className="w-4 h-4 mr-2" /> Update Pricing
               </Button>
             </div>
