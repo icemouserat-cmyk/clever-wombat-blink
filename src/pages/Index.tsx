@@ -13,7 +13,8 @@ import {
   AlertCircle,
   FileText,
   Plus,
-  DollarSign
+  DollarSign,
+  Calendar
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 
@@ -28,25 +29,25 @@ interface KPIProps {
 
 function KPICard({ title, value, icon, description, trend, status }: KPIProps) {
   return (
-    <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden group hover:shadow-md transition-shadow">
+    <Card className="border-none shadow-sm bg-white rounded-3xl overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+          <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
             {icon}
           </div>
           {trend && (
-            <div className={`flex items-center text-xs font-medium ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+            <div className={`flex items-center text-xs font-bold px-2 py-1 rounded-full ${trend.isPositive ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
               {trend.value} <ArrowUpRight className={`w-3 h-3 ${trend.isPositive ? '' : 'rotate-90'}`} />
             </div>
           )}
         </div>
-        <CardTitle className="text-sm font-medium text-slate-500 mt-4">{title}</CardTitle>
+        <CardTitle className="text-sm font-bold text-slate-400 mt-4 uppercase tracking-wider">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold text-slate-900">{value}</div>
-        <p className="text-xs text-slate-400 mt-1">{description}</p>
+        <div className="text-4xl font-black text-slate-900 tracking-tight">{value}</div>
+        <p className="text-sm text-slate-500 mt-1 font-medium">{description}</p>
         {status === 'danger' && (
-          <div className="mt-3 flex items-center gap-1 text-red-500 text-[10px] font-medium">
+          <div className="mt-3 flex items-center gap-1 text-red-500 text-[11px] font-bold bg-red-50 p-2 rounded-lg">
             <AlertCircle className="w-3 h-3" /> Target: 15m turnaround
           </div>
         )}
@@ -140,68 +141,92 @@ export default function Dashboard() {
   if (isLoading) return <div className="p-8 text-center">Loading analytics...</div>;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-slate-900">Founder's Console</h1>
-        <p className="text-slate-500">Real-time operational metrics and pipeline overview.</p>
+    <div className="max-w-7xl mx-auto space-y-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Founder's Console</h1>
+          <div className="flex items-center gap-2 text-slate-500 font-medium">
+            <Calendar className="w-4 h-4" />
+            <span>{format(new Date(), 'EEEE, MMMM do yyyy')}</span>
+          </div>
+        </div>
+        <div className="flex gap-3">
+           <Button 
+            variant="outline" 
+            className="bg-white rounded-xl shadow-sm border-slate-200 text-slate-600 hover:bg-slate-50"
+            onClick={() => navigate('/inquiries')}
+          >
+            <Plus className="w-4 h-4 mr-2" /> New Inquiry
+          </Button>
+          <Button 
+            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-100 transition-all"
+            onClick={() => navigate('/quotations/new')}
+          >
+            <FileText className="w-4 h-4 mr-2" /> Create Quotation
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard 
           title="Quotes Sent" 
           value={kpis.sent} 
-          icon={<FileText className="w-5 h-5" />} 
+          icon={<FileText className="w-6 h-6" />} 
           description="Current week" 
           trend={{ value: '+12%', isPositive: true }}
         />
         <KPICard 
           title="Avg. Turnaround" 
           value={kpis.turnaround} 
-          icon={<Clock className="w-5 h-5" />} 
+          icon={<Clock className="w-6 h-6" />} 
           description="Sent vs Created" 
           status={parseInt(kpis.turnaround) > 15 ? 'danger' : 'good'}
         />
         <KPICard 
           title="Conversion Rate" 
           value={kpis.conversion} 
-          icon={<CheckCircle2 className="w-5 h-5" />} 
+          icon={<CheckCircle2 className="w-6 h-6" />} 
           description="Order / Sent" 
           trend={{ value: '+2.4%', isPositive: true }}
         />
         <KPICard 
           title="Active Time" 
           value={`${kpis.activeMinutes}m`} 
-          icon={<Timer className="w-5 h-5" />} 
+          icon={<Timer className="w-6 h-6" />} 
           description="Logged today" 
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-            <div className="p-4 border-b bg-slate-50 flex justify-between items-center">
-              <h3 className="font-semibold text-slate-800">Recent Activity</h3>
-              <Badge variant="outline" className="text-xs font-medium">Last 5 Quotes</Badge>
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+              <h3 className="font-bold text-slate-800 text-lg">Recent Activity</h3>
+              <Badge variant="outline" className="bg-white text-slate-500 font-bold px-3 py-1 rounded-full border-slate-200">
+                Last 5 Quotes
+              </Badge>
             </div>
-            <div className="divide-y">
+            <div className="divide-y divide-slate-100">
               {recentActivity.length === 0 ? (
-                <div className="p-10 text-center text-slate-400">No recent quotations found.</div>
+                <div className="p-20 text-center text-slate-400 font-medium">No recent quotations found.</div>
               ) : (
                 recentActivity.map((quote) => (
-                  <div key={quote.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${
-                        quote.status === 'Order' ? 'bg-green-500' : 
-                        quote.status === 'Sent' ? 'bg-blue-500' : 'bg-slate-300'
+                  <div key={quote.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors group">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-3 h-3 rounded-full shadow-sm ${
+                        quote.status === 'Order' ? 'bg-green-500 ring-4 ring-green-100' : 
+                        quote.status === 'Sent' ? 'bg-blue-500 ring-4 ring-blue-100' : 'bg-slate-300 ring-4 ring-slate-100'
                       }`} />
-                      <div>
-                        <div className="text-sm font-medium text-slate-900">{quote.customers?.name || 'Unknown'}</div>
-                        <div className="text-xs text-slate-500">{format(new Date(quote.created_at), 'MMM dd, HH:mm')}</div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{quote.customers?.name || 'Unknown'}</span>
+                        <span className="text-xs text-slate-500 font-medium">{format(new Date(quote.created_at), 'MMM dd, HH:mm')}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-sm font-semibold">${quote.total_amount}</div>
-                      <Badge variant="secondary" className="text-[10px] capitalize">{quote.status}</Badge>
+                    <div className="flex items-center gap-6">
+                      <span className="text-sm font-black text-slate-900">${quote.total_amount}</span>
+                      <Badge variant="secondary" className="text-[11px] font-bold capitalize px-3 py-1 rounded-full bg-slate-100 text-slate-600 border-none">
+                        {quote.status}
+                      </Badge>
                     </div>
                   </div>
                 ))
@@ -210,48 +235,51 @@ export default function Dashboard() {
           </div>
         </div>
         
-        <div className="space-y-6">
-          <div className="bg-indigo-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-            <div className="relative z-10 space-y-4">
-              <h3 className="text-lg font-bold">Founder's Tip</h3>
-              <p className="text-indigo-100 text-sm leading-relaxed">
+        <div className="space-y-8">
+          <div className="bg-indigo-600 rounded-3xl p-8 text-white shadow-2xl shadow-indigo-200 relative overflow-hidden group">
+            <div className="relative z-10 space-y-6">
+              <div className="flex items-center gap-2 text-indigo-200 text-xs font-bold uppercase tracking-widest">
+                <BrainCircuit className="w-4 h-4" /> Operational Intelligence
+              </div>
+              <h3 className="text-2xl font-black leading-tight">Founder's Strategy Tip</h3>
+              <p className="text-indigo-100 text-sm leading-relaxed font-medium">
                 "Focus on Custom items first. A3 approvals are the main bottleneck in the current pipeline."
               </p>
               <Button 
                 onClick={() => navigate('/quotations')} 
-                className="w-full bg-white text-indigo-900 hover:bg-indigo-50 font-bold rounded-xl"
+                className="w-full bg-white text-indigo-600 hover:bg-indigo-50 font-bold rounded-xl shadow-lg transition-transform active:scale-95"
               >
-                Open AI Advisor
+                Launch AI Advisor
               </Button>
             </div>
-            <div className="absolute -right-4 -bottom-4 opacity-10">
-              <TrendingUp className="w-32 h-32" />
+            <div className="absolute -right-8 -bottom-8 opacity-20 group-hover:rotate-12 transition-transform duration-500">
+              <TrendingUp className="w-48 h-48" />
             </div>
           </div>
           
-          <div className="bg-white rounded-2xl border p-6 shadow-sm space-y-4">
-            <h3 className="font-semibold text-slate-800">Quick Actions</h3>
-            <div className="grid grid-cols-1 gap-2">
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-6">
+            <h3 className="font-bold text-slate-800 text-lg">Quick Actions</h3>
+            <div className="grid grid-cols-1 gap-3">
               <Button 
                 variant="outline" 
-                className="justify-start rounded-lg text-slate-600 hover:bg-slate-50"
+                className="justify-start rounded-xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all group"
                 onClick={() => navigate('/inquiries')}
               >
-                <Plus className="w-4 h-4 mr-2" /> New Inquiry
+                <Plus className="w-4 h-4 mr-3 text-slate-400 group-hover:text-indigo-600" /> New Inquiry
               </Button>
               <Button 
                 variant="outline" 
-                className="justify-start rounded-lg text-slate-600 hover:bg-slate-50"
+                className="justify-start rounded-xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all group"
                 onClick={() => navigate('/quotations/new')}
               >
-                <FileText className="w-4 h-4 mr-2" /> Draft Quote
+                <FileText className="w-4 h-4 mr-3 text-slate-400 group-hover:text-indigo-600" /> Draft Quote
               </Button>
               <Button 
                 variant="outline" 
-                className="justify-start rounded-lg text-slate-600 hover:bg-slate-50"
+                className="justify-start rounded-xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all group"
                 onClick={() => navigate('/settings/pricing')}
               >
-                <DollarSign className="w-4 h-4 mr-2" /> Update Pricing
+                <DollarSign className="w-4 h-4 mr-3 text-slate-400 group-hover:text-indigo-600" /> Update Pricing
               </Button>
             </div>
           </div>
