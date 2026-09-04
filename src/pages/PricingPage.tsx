@@ -110,7 +110,7 @@ const PricingPage = () => {
                     </Select>
                   </TableCell>
                   <TableCell>
-                    <Select value={edit.supplier_id ?? item.supplier_id || ''} onValueChange={(val) => { updateLocal(item.id, { supplier_id: val || null }); handleSave(item.id, { supplier_id: val || null }); }}>
+                    <Select value={(edit.supplier_id ?? item.supplier_id) || ''} onValueChange={(val) => { updateLocal(item.id, { supplier_id: val || null }); handleSave(item.id, { supplier_id: val || null }); }}>
                       <SelectTrigger className="h-8"><SelectValue placeholder="None" /></SelectTrigger>
                       <SelectContent>{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                     </Select>
