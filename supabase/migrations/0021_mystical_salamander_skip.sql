@@ -1,0 +1,1 @@
+CREATE POLICY "Users can delete their own images" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'app-images' AND (storage.foldername(name))[1] = auth.uid()::text);
