@@ -11,6 +11,8 @@ import SignUpPage from "./pages/SignUpPage";
 import InquiryPage from "./pages/InquiryPage";
 import SuppliersPage from "./pages/SuppliersPage";
 import PricingPage from "./pages/PricingPage";
+import QuotationsPage from "./pages/QuotationsPage";
+import QuoteEditorPage from "./pages/QuoteEditorPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +32,8 @@ const App = () => (
               <Route path="/inquiries" element={<InquiryPage />} />
               <Route path="/settings/suppliers" element={<SuppliersPage />} />
               <Route path="/settings/pricing" element={<PricingPage />} />
+              <Route path="/quotations" element={<QuotationsPage />} />
+              <Route path="/quotations/:id" element={<QuoteEditorPage />} />
               {/* ADD ALL PROTECTED CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             </Route>
             <Route path="*" element={<NotFound />} />
