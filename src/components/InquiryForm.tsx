@@ -75,7 +75,7 @@ const InquiryForm = () => {
         <div className="space-y-2">
           <Label htmlFor="name">Customer Name</Label>
           <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
-        </div}
+        </div>
         <div className="space-y-2">
           <Label htmlFor="referral">Referral Source</Label>
           <Select value={formData.referralSource} onValueChange={(val) => setFormData({ ...formData, referralSource: val })} required>
@@ -85,16 +85,16 @@ const InquiryForm = () => {
               <SelectItem value="Referral Partner">Referral Partner</SelectItem>
             </SelectContent>
           </Select>
-        </div}
+        </div>
         <div className="space-y-2">
           <Label htmlFor="staff">Staff Size (20-150)</Label>
           <Input id="staff" type="number" value={formData.staffSize} onChange={(e) => setFormData({ ...formData, staffSize: e.target.value })} required />
-        </div}
-      </div}
+        </div>
+      </div>
       <div className="space-y-2">
         <Label htmlFor="notes">Inquiry Notes</Label>
         <Textarea id="notes" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={4} />
-      </div}
+      </div>
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : 'Capture Inquiry'}
       </Button>
