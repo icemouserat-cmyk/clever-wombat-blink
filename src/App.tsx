@@ -1,32 +1,27 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import MainLayout from '@/components/MainLayout';
-import Index from '@/pages/Index';
-import NotFound from '@/pages/NotFound';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
 
-// Lazy load pages to be implemented
-import InquiryPage from '@/pages/InquiryPage';
-import PricingPage from '@/pages/PricingPage';
-import QuotationsPage from '@/pages/QuotationsPage';
-import QuoteEditorPage from '@/pages/QuoteEditorPage';
-import AIConfigPage from '@/pages/AIConfigPage';
+const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Index />} />
-          <Route path="inquiries" element={<InquiryPage />} />
-          <Route path="quotations" element={<QuotationsPage />} />
-          <Route path="quotations/:id" element={<QuoteEditorPage />} />
-          <Route path="settings/pricing" element={<PricingPage />} />
-          <Route path="settings/ai" element={<AIConfigPage />} />
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
-  );
-}
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
