@@ -86,9 +86,13 @@ const PricingPage = () => {
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow>
-              <TableHead>SKU</TableHead><TableHead>Description</TableHead><TableHead>Cost (RM)</TableHead>
-              <TableHead>Group</TableHead><TableHead>Supplier</TableHead><TableHead className="text-center">Status</TableHead>
-              <TableHead className="text-right">Action</TableHead>
+              <TableHead className="w-[140px]">SKU</TableHead>
+              <TableHead className="w-full">Description</TableHead>
+              <TableHead className="w-[120px]">Cost (RM)</TableHead>
+              <TableHead className="w-[180px]">Group</TableHead>
+              <TableHead className="w-[180px]">Supplier</TableHead>
+              <TableHead className="text-center w-[80px]">Status</TableHead>
+              <TableHead className="text-right w-[80px]">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -98,8 +102,12 @@ const PricingPage = () => {
               return (
                 <TableRow key={item.id}>
                   <TableCell className="font-mono font-medium">{item.sku}</TableCell>
-                  <TableCell><Input className="h-8" value={edit.description ?? item.description} onChange={(e) => updateLocal(item.id, { description: e.target.value })} onBlur={() => handleSave(item.id)} /></TableCell>
-                  <TableCell><Input className="h-8" type="number" value={edit.base_cost ?? item.base_cost} onChange={(e) => updateLocal(item.id, { base_cost: parseFloat(e.target.value) || 0 })} onBlur={() => handleSave(item.id)} /></TableCell>
+                  <TableCell>
+                    <Input className="h-8" value={edit.description ?? item.description} onChange={(e) => updateLocal(item.id, { description: e.target.value })} onBlur={() => handleSave(item.id)} />
+                  </TableCell>
+                  <TableCell>
+                    <Input className="h-8" type="number" value={edit.base_cost ?? item.base_cost} onChange={(e) => updateLocal(item.id, { base_cost: parseFloat(e.target.value) || 0 })} onBlur={() => handleSave(item.id)} />
+                  </TableCell>
                   <TableCell>
                     <Select value={edit.item_group ?? item.item_group} onValueChange={(val: any) => { updateLocal(item.id, { item_group: val }); handleSave(item.id, { item_group: val }); }}>
                       <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
