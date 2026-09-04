@@ -106,7 +106,7 @@ const PricingPage = () => {
                     <Input className="h-8" value={edit.description ?? item.description} onChange={(e) => updateLocal(item.id, { description: e.target.value })} onBlur={() => handleSave(item.id)} />
                   </TableCell>
                   <TableCell>
-                    <Input className="h-8" type="number" value={edit.base_cost ?? item.base_cost} onChange={(e) => updateLocal(item.id, { base_cost: parseFloat(e.target.value) || 0 })} onBlur={() => handleSave(item.id)} />
+                    <Input className="h-8 w-full" type="number" value={edit.base_cost ?? item.base_cost} onChange={(e) => updateLocal(item.id, { base_cost: parseFloat(e.target.value) || 0 })} onBlur={() => handleSave(item.id)} />
                   </TableCell>
                   <TableCell>
                     <Select value={edit.item_group ?? item.item_group} onValueChange={(val: any) => { updateLocal(item.id, { item_group: val }); handleSave(item.id, { item_group: val }); }}>
