@@ -1,31 +1,81 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { LogOut, Users, Package, DollarSign, FileText } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import AppHeader from '@/components/AppHeader';
+import { Link } from 'react-router-dom';
+import { Users, Package, DollarSign, FileText, Loader2, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
 
 const Index = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [kpis, setKpis] = useState({
+    quotesSentThisWeek: 0,
+    conversionRate: 0,
+    avgTurnaroundMinutes: 0,
+    founderActiveMinutesToday: 0,
+  });
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/signin');
+  useEffect(() => {
+    if (user) loadKpis();
+  }, [user]);
+
+  const loadKpis = async () => {
+    setIsLoading(true);
+    try {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { data: allQuotes } = await supabase
+        .from('quotations')
+        .select('status, created_at, sent_at');
+
+      const quotes = allQuotes || [];
+
+      const sentThisWeek = quotes.filter(
+        q => q.sent_at && new Date(q.sent_at) >= sevenDaysAgo
+      ).length;
+
+      const sentOrOrdered = quotes.filter(q => q.status === 'Sent' || q.status === 'Order');
+      const ordered = quotes.filter(q => q.status === 'Order');
+      const conversionRate = sentOrOrdered.length > 0
+        ? Math.round((ordered.length / sentOrOrdered.length) * 100)
+        : 0;
+
+      const sentQuotesWithTiming = quotes.filter(q => q.sent_at && q.created_at);
+      const avgTurnaroundMinutes = sentQuotesWithTiming.length > 0
+        ? Math.round(
+            sentQuotesWithTiming.reduce((sum, q) => {
+              const diffMs = new Date(q.sent_at!).getTime() - new Date(q.created_at).getTime();
+              return sum + diffMs / 60000;
+            }, 0) / sentQuotesWithTiming.length
+          )
+        : 0;
+
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const { data: timeLogs } = await supabase
+        .from('founder_time_logs')
+        .select('duration_minutes, start_time')
+        .gte('start_time', todayStart.toISOString());
+
+      const founderActiveMinutesToday = (timeLogs || []).reduce(
+        (sum, log) => sum + (log.duration_minutes || 0), 0
+      );
+
+      setKpis({
+        quotesSentThisWeek: sentThisWeek,
+        conversionRate,
+        avgTurnaroundMinutes,
+        founderActiveMinutesToday,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="border-b bg-white">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold">AuraSpace Console</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">{user?.email}</span>
-            <Button variant="outline" size="sm" onClick={handleSignOut} className="gap-2">
-              <LogOut className="h-4 w-4" /> Sign Out
-            </Button>
-          </div>
-        </div>
-      </div>
+      <AppHeader />
 
       <div className="container mx-auto px-4 py-12">
         <div className="mb-8">
@@ -33,38 +83,84 @@ const Index = () => {
           <p className="text-muted-foreground">Manage inquiries, quotations, and your catalogue from here.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Link to="/inquiries" className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition-shadow space-y-3">
-            <Users className="h-8 w-8 text-primary" />
-            <div>
-              <h3 className="font-semibold">Inquiries</h3>
-              <p className="text-sm text-muted-foreground">Capture new leads</p>
-            </div>
-          </Link>
+        <div className="mb-10">
+          <h3 className="text-lg font-semibold mb-4">Key Performance Indicators</h3>
+          {isLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="rounded-xl border bg-white p-6 space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <FileText className="h-4 w-4" /> Quotes Sent This Week
+                </div>
+                <p className="text-3xl font-bold">{kpis.quotesSentThisWeek}</p>
+              </div>
 
-          <Link to="/quotations" className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition-shadow space-y-3">
-            <FileText className="h-8 w-8 text-primary" />
-            <div>
-              <h3 className="font-semibold">Quotations</h3>
-              <p className="text-sm text-muted-foreground">Build and send quotes</p>
-            </div>
-          </Link>
+              <div className="rounded-xl border bg-white p-6 space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <CheckCircle2 className="h-4 w-4" /> Quote-to-Order Conversion
+                </div>
+                <p className="text-3xl font-bold">{kpis.conversionRate}%</p>
+              </div>
 
-          <Link to="/settings/pricing" className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition-shadow space-y-3">
-            <DollarSign className="h-8 w-8 text-primary" />
-            <div>
-              <h3 className="font-semibold">Price List</h3>
-              <p className="text-sm text-muted-foreground">Manage SKUs and pricing</p>
-            </div>
-          </Link>
+              <div className="rounded-xl border bg-white p-6 space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <TrendingUp className="h-4 w-4" /> Avg Turnaround (Inquiry→Sent)
+                </div>
+                <p className="text-3xl font-bold">
+                  {kpis.avgTurnaroundMinutes < 60
+                    ? `${kpis.avgTurnaroundMinutes}m`
+                    : `${(kpis.avgTurnaroundMinutes / 60).toFixed(1)}h`}
+                </p>
+                <p className="text-xs text-muted-foreground">Target: 15 min (R-01)</p>
+              </div>
 
-          <Link to="/settings/suppliers" className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition-shadow space-y-3">
-            <Package className="h-8 w-8 text-primary" />
-            <div>
-              <h3 className="font-semibold">Suppliers</h3>
-              <p className="text-sm text-muted-foreground">Factory partner references</p>
+              <div className="rounded-xl border bg-white p-6 space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Clock className="h-4 w-4" /> Founder Active Minutes Today
+                </div>
+                <p className="text-3xl font-bold">{kpis.founderActiveMinutesToday}</p>
+                <p className="text-xs text-muted-foreground">Not yet tracked in this build</p>
+              </div>
             </div>
-          </Link>
+          )}
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Link to="/inquiries" className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition-shadow space-y-3">
+              <Users className="h-8 w-8 text-primary" />
+              <div>
+                <h3 className="font-semibold">Inquiries</h3>
+                <p className="text-sm text-muted-foreground">Capture new leads</p>
+              </div>
+            </Link>
+
+            <Link to="/quotations" className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition-shadow space-y-3">
+              <FileText className="h-8 w-8 text-primary" />
+              <div>
+                <h3 className="font-semibold">Quotations</h3>
+                <p className="text-sm text-muted-foreground">Build and send quotes</p>
+              </div>
+            </Link>
+
+            <Link to="/settings/pricing" className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition-shadow space-y-3">
+              <DollarSign className="h-8 w-8 text-primary" />
+              <div>
+                <h3 className="font-semibold">Price List</h3>
+                <p className="text-sm text-muted-foreground">Manage SKUs and pricing</p>
+              </div>
+            </Link>
+
+            <Link to="/settings/suppliers" className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition-shadow space-y-3">
+              <Package className="h-8 w-8 text-primary" />
+              <div>
+                <h3 className="font-semibold">Suppliers</h3>
+                <p className="text-sm text-muted-foreground">Factory partner references</p>
+              </div>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
