@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import AppHeader from '@/components/AppHeader';
+import ImageUpload from '@/components/ImageUpload';
 import { Link } from 'react-router-dom';
 import { Users, Package, DollarSign, FileText, Loader2, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
 
 const Index = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [kpis, setKpis] = useState({
     quotesSentThisWeek: 0,
     conversionRate: 0,
@@ -16,8 +18,29 @@ const Index = () => {
   });
 
   useEffect(() => {
-    if (user) loadKpis();
+    if (user) {
+      loadKpis();
+      loadProfile();
+    }
   }, [user]);
+
+  const loadProfile = async () => {
+    if (!user) return;
+    const { data } = await supabase.from('profiles').select('logo_url').eq('id', user.id).maybeSingle();
+    setLogoUrl(data?.logo_url || null);
+  };
+
+  const handleLogoUploaded = async (url: string) => {
+    if (!user) return;
+    await supabase.from('profiles').update({ logo_url: url }).eq('id', user.id);
+    setLogoUrl(url);
+  };
+
+  const handleLogoRemoved = async () => {
+    if (!user) return;
+    await supabase.from('profiles').update({ logo_url: null }).eq('id', user.id);
+    setLogoUrl(null);
+  };
 
   const loadKpis = async () => {
     setIsLoading(true);
@@ -78,9 +101,20 @@ const Index = () => {
       <AppHeader />
 
       <div className="container mx-auto px-4 py-12">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold tracking-tight">Welcome back</h2>
-          <p className="text-muted-foreground">Manage inquiries, quotations, and your catalogue from here.</p>
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Welcome back</h2>
+            <p className="text-muted-foreground">Manage inquiries, quotations, and your catalogue from here.</p>
+          </div>
+          <div className="rounded-xl border bg-white p-4">
+            <ImageUpload
+              currentUrl={logoUrl}
+              folder="logo"
+              onUploaded={handleLogoUploaded}
+              onRemoved={handleLogoRemoved}
+              label="Company Logo"
+            />
+          </div>
         </div>
 
         <div className="mb-10">
