@@ -4,17 +4,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  TrendingUp, 
-  Clock, 
-  CheckCircle2, 
-  Timer, 
-  ArrowUpRight, 
+import {
+  TrendingUp,
+  Clock,
+  CheckCircle2,
+  Timer,
+  ArrowUpRight,
   AlertCircle,
   FileText,
   Plus,
   DollarSign,
-  Calendar
+  Calendar,
+  BrainCircuit
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 
