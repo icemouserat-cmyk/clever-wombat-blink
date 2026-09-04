@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import AppHeader from '@/components/AppHeader';
 import AIAdvisorPanel from '@/components/AIAdvisorPanel';
-import { Loader2, Plus, Trash2, ArrowLeft, FileText, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, Plus, Trash2, ArrowLeft, FileText, Send, CheckCircle, AlertCircle, Download } from 'lucide-react';
 
 const QuoteEditorPage = () => {
   const { id: quoteId } = useParams<{ id: string }>();
@@ -146,6 +146,59 @@ const QuoteEditorPage = () => {
     }
   };
 
+  const escapeCsv = (val: any) => {
+    const str = String(val ?? '');
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const handleExportCsv = () => {
+    if (!quotation || !customer) return;
+
+    const headerRows = [
+      ['Field', 'Value'],
+      ['Quotation ID', quotation.id],
+      ['Status', quotation.status],
+      ['Customer Name', customer.name],
+      ['Referral Source', customer.referral_source],
+      ['Staff Size', customer.staff_size],
+      ['Created At', quotation.created_at],
+      ['Sent At', quotation.sent_at || ''],
+      ['Total Amount (RM)', Number(quotation.total_amount).toFixed(2)],
+      ['Notes', quotation.notes || ''],
+      [],
+      ['SKU', 'Quantity', 'Unit Price (RM)', 'Line Total (RM)', 'Item Group', 'Requires A3 Approval', 'Approved'],
+    ];
+
+    const itemRows = items.map(item => [
+      item.sku,
+      item.quantity,
+      item.unit_price.toFixed(2),
+      item.line_total.toFixed(2),
+      item.requires_a3_approval ? 'Furniture - Custom' : 'Furniture - Standard',
+      item.requires_a3_approval ? 'Yes' : 'No',
+      item.is_approved ? 'Yes' : 'No',
+    ]);
+
+    const allRows = [...headerRows, ...itemRows];
+    const csvContent = allRows.map(row => row.map(escapeCsv).join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const safeCustomerName = (customer.name || 'quotation').replace(/[^a-z0-9]/gi, '_');
+    link.download = `AuraSpace_Quote_${safeCustomerName}_${quotation.id.slice(0, 8)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({ title: 'Exported', description: 'Quotation CSV downloaded.' });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -180,11 +233,16 @@ const QuoteEditorPage = () => {
                 RM {quotation?.total_amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
-            {quotation?.status === 'Draft' && (
-              <Button onClick={handleMarkAsSent} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
-                <Send className="h-4 w-4" /> Mark as Sent
+            <div className="flex flex-col gap-2">
+              <Button variant="outline" onClick={handleExportCsv} disabled={items.length === 0} className="flex items-center gap-2">
+                <Download className="h-4 w-4" /> Export CSV
               </Button>
-            )}
+              {quotation?.status === 'Draft' && (
+                <Button onClick={handleMarkAsSent} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
+                  <Send className="h-4 w-4" /> Mark as Sent
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
