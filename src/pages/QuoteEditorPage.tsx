@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Trash2, ArrowLeft, FileText } from 'lucide-react';
+import { Loader2, Plus, Trash2, ArrowLeft, FileText, Send, CheckCircle, AlertCircle } from 'lucide-react';
 
 const QuoteEditorPage = () => {
   const { id: quoteId } = useParams<{ id: string }>();
@@ -110,6 +110,40 @@ const QuoteEditorPage = () => {
     }
   };
 
+  const handleToggleApproval = async (itemId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase.from('quotation_items').update({ is_approved: !currentStatus }).eq('id', itemId);
+      if (error) throw error;
+      setItems(prev => prev.map(item => item.id === itemId ? { ...item, is_approved: !currentStatus } : item));
+      toast({ title: 'Approval Updated', description: `Item is now ${!currentStatus ? 'Approved' : 'Pending Review'}.` });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+
+  const handleMarkAsSent = async () => {
+    const unapprovedCustomItems = items.filter(item => item.requires_a3_approval && !item.is_approved);
+    if (unapprovedCustomItems.length > 0) {
+      toast({
+        variant: 'destructive',
+        title: 'A3 Approval Required',
+        description: `Cannot send quotation. ${unapprovedCustomItems.length} custom item(s) require explicit founder approval before sending.`,
+      });
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('quotations')
+        .update({ status: 'Sent', sent_at: new Date().toISOString() })
+        .eq('id', quoteId);
+      if (error) throw error;
+      setQuotation((prev: any) => ({ ...prev, status: 'Sent' }));
+      toast({ title: 'Quotation Sent', description: 'The quotation has been marked as Sent.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -135,11 +169,18 @@ const QuoteEditorPage = () => {
             Staff Size: <span className="font-medium text-foreground">{customer?.staff_size}</span>
           </p>
         </div>
-        <div className="text-right space-y-1">
-          <p className="text-sm text-muted-foreground">Total Amount</p>
-          <p className="text-4xl font-bold text-primary">
-            RM {quotation?.total_amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="text-right space-y-1">
+            <p className="text-sm text-muted-foreground">Total Amount</p>
+            <p className="text-4xl font-bold text-primary">
+              RM {quotation?.total_amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+          {quotation?.status === 'Draft' && (
+            <Button onClick={handleMarkAsSent} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
+              <Send className="h-4 w-4" /> Mark as Sent
+            </Button>
+          )}
         </div>
       </div>
 
@@ -211,11 +252,22 @@ const QuoteEditorPage = () => {
                       <td className="px-4 py-2 font-medium">RM {item.line_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                       <td className="px-4 py-2">
                         {item.requires_a3_approval ? (
-                          item.is_approved ? (
-                            <Badge className="bg-green-500 hover:bg-green-600">Approved</Badge>
-                          ) : (
-                            <Badge className="bg-red-500 hover:bg-red-600">Pending A3</Badge>
-                          )
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleApproval(item.id, item.is_approved)}
+                            className="h-7 px-2"
+                          >
+                            {item.is_approved ? (
+                              <Badge className="bg-green-500 hover:bg-green-600 flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" /> Approved
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-red-500 hover:bg-red-600 flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" /> Pending A3
+                              </Badge>
+                            )}
+                          </Button>
                         ) : (
                           <Badge variant="secondary" className="font-normal">Standard</Badge>
                         )}
