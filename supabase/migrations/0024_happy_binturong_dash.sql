@@ -1,0 +1,1 @@
+ALTER TABLE public.customers ADD CONSTRAINT customers_referral_source_check CHECK (referral_source IN ('Direct Outreach', 'Referral Partner'));
