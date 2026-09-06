@@ -10,7 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import AppHeader from '@/components/AppHeader';
 import AIAdvisorPanel from '@/components/AIAdvisorPanel';
-import { Loader2, Plus, Trash2, ArrowLeft, FileText, Send, CheckCircle, AlertCircle, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { Loader2, Plus, Trash2, ArrowLeft, FileText, Send, CheckCircle, AlertCircle, Download, FileDown } from 'lucide-react';
 
 const QuoteEditorPage = () => {
   const { id: quoteId } = useParams<{ id: string }>();
@@ -23,6 +25,7 @@ const QuoteEditorPage = () => {
   const [customer, setCustomer] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
   const [priceList, setPriceList] = useState<any[]>([]);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   const [selectedSku, setSelectedSku] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -49,6 +52,11 @@ const QuoteEditorPage = () => {
       const { data: pl, error: plError } = await supabase.from('price_list').select('*').order('sku', { ascending: true });
       if (plError) throw plError;
       setPriceList(pl || []);
+
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('logo_url').eq('id', user.id).maybeSingle();
+        setLogoUrl(profile?.logo_url || null);
+      }
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } finally {
@@ -199,6 +207,105 @@ const QuoteEditorPage = () => {
     toast({ title: 'Exported', description: 'Quotation CSV downloaded.' });
   };
 
+  const loadImageAsDataUrl = (url: string): Promise<string | null> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { resolve(null); return; }
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } catch {
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  };
+
+  const handleExportPdf = async () => {
+    if (!quotation || !customer) return;
+
+    const doc = new jsPDF();
+    let cursorY = 15;
+
+    if (logoUrl) {
+      const dataUrl = await loadImageAsDataUrl(logoUrl);
+      if (dataUrl) {
+        try {
+          doc.addImage(dataUrl, 'PNG', 14, cursorY, 30, 30);
+          cursorY += 5;
+        } catch {
+          // If image embedding fails, continue without it rather than blocking export
+        }
+      }
+    }
+
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('AuraSpace Sdn Bhd', logoUrl ? 50 : 14, cursorY + 8);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Quotation', logoUrl ? 50 : 14, cursorY + 14);
+
+    cursorY += 35;
+
+    doc.setFontSize(11);
+    doc.text(`Quotation ID: ${quotation.id.slice(0, 8)}`, 14, cursorY);
+    doc.text(`Status: ${quotation.status}`, 140, cursorY);
+    cursorY += 6;
+    doc.text(`Customer: ${customer.name}`, 14, cursorY);
+    doc.text(`Created: ${new Date(quotation.created_at).toLocaleDateString()}`, 140, cursorY);
+    cursorY += 6;
+    doc.text(`Referral Source: ${customer.referral_source}`, 14, cursorY);
+    if (quotation.sent_at) {
+      doc.text(`Sent: ${new Date(quotation.sent_at).toLocaleDateString()}`, 140, cursorY);
+    }
+    cursorY += 6;
+    doc.text(`Staff Size: ${customer.staff_size}`, 14, cursorY);
+    cursorY += 10;
+
+    if (quotation.notes) {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(9);
+      const noteLines = doc.splitTextToSize(`Notes: ${quotation.notes}`, 180);
+      doc.text(noteLines, 14, cursorY);
+      cursorY += noteLines.length * 5 + 5;
+      doc.setFont('helvetica', 'normal');
+    }
+
+    autoTable(doc, {
+      startY: cursorY,
+      head: [['SKU', 'Qty', 'Unit Price (RM)', 'Line Total (RM)', 'Group', 'A3 Approved']],
+      body: items.map(item => [
+        item.sku,
+        String(item.quantity),
+        item.unit_price.toFixed(2),
+        item.line_total.toFixed(2),
+        item.requires_a3_approval ? 'Custom' : 'Standard',
+        item.requires_a3_approval ? (item.is_approved ? 'Yes' : 'No') : 'N/A',
+      ]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [79, 70, 229] },
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY || cursorY + 20;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total: RM ${Number(quotation.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 140, finalY + 10);
+
+    const safeCustomerName = (customer.name || 'quotation').replace(/[^a-z0-9]/gi, '_');
+    doc.save(`AuraSpace_Quote_${safeCustomerName}_${quotation.id.slice(0, 8)}.pdf`);
+
+    toast({ title: 'Exported', description: 'Quotation PDF downloaded.' });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -234,9 +341,14 @@ const QuoteEditorPage = () => {
               </p>
             </div>
             <div className="flex flex-col gap-2">
-              <Button variant="outline" onClick={handleExportCsv} disabled={items.length === 0} className="flex items-center gap-2">
-                <Download className="h-4 w-4" /> Export CSV
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={items.length === 0} className="flex items-center gap-2">
+                  <Download className="h-4 w-4" /> CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={items.length === 0} className="flex items-center gap-2">
+                  <FileDown className="h-4 w-4" /> PDF
+                </Button>
+              </div>
               {quotation?.status === 'Draft' && (
                 <Button onClick={handleMarkAsSent} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
                   <Send className="h-4 w-4" /> Mark as Sent
