@@ -26,6 +26,7 @@ const QuoteEditorPage = () => {
   const [items, setItems] = useState<any[]>([]);
   const [priceList, setPriceList] = useState<any[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [timeLogId, setTimeLogId] = useState<string | null>(null);
 
   const [selectedSku, setSelectedSku] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -33,6 +34,42 @@ const QuoteEditorPage = () => {
   useEffect(() => {
     if (quoteId) loadQuoteData();
   }, [quoteId]);
+
+  useEffect(() => {
+    if (!quoteId || !user) return;
+
+    const startLog = async () => {
+      const { data, error } = await supabase
+        .from('founder_time_logs')
+        .insert({
+          user_id: user.id,
+          quotation_id: quoteId,
+          start_time: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      if (!error && data) setTimeLogId(data.id);
+    };
+
+    startLog();
+
+    const closeLog = async () => {
+      if (!timeLogId) return;
+      const end = new Date();
+      const { data } = await supabase.from('founder_time_logs').select('start_time').eq('id', timeLogId).single();
+      if (!data) return;
+      const start = new Date(data.start_time);
+      const duration = Math.round((end.getTime() - start.getTime()) / 60000);
+      await supabase.from('founder_time_logs').update({ end_time: end.toISOString(), duration_minutes: duration }).eq('id', timeLogId).catch(() => {});
+    };
+
+    window.addEventListener('beforeunload', closeLog);
+
+    return () => {
+      window.removeEventListener('beforeunload', closeLog);
+      closeLog();
+    };
+  }, [quoteId, user]);
 
   const loadQuoteData = async () => {
     setIsLoading(true);
