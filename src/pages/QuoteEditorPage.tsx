@@ -67,10 +67,14 @@ const QuoteEditorPage = () => {
       const start = new Date(data.start_time);
       const duration = Math.round((end.getTime() - start.getTime()) / 60000);
       
-      await supabase.from('founder_time_logs')
-        .update({ end_time: end.toISOString(), duration_minutes: duration })
-        .eq('id', logId)
-        .catch(() => {});
+      try {
+        await supabase
+          .from('founder_time_logs')
+          .update({ end_time: end.toISOString(), duration_minutes: duration })
+          .eq('id', logId);
+      } catch {
+        // best-effort — ignore errors during unload/navigation
+      }
     };
 
     window.addEventListener('beforeunload', closeLog);
