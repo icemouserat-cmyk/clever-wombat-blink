@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,7 +26,8 @@ const QuoteEditorPage = () => {
   const [items, setItems] = useState<any[]>([]);
   const [priceList, setPriceList] = useState<any[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [timeLogId, setTimeLogId] = useState<string | null>(null);
+  
+  const timeLogRef = useRef<string | null>(null);
 
   const [selectedSku, setSelectedSku] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -48,19 +49,28 @@ const QuoteEditorPage = () => {
         })
         .select()
         .single();
-      if (!error && data) setTimeLogId(data.id);
+      if (!error && data) {
+        timeLogRef.current = data.id;
+      }
     };
 
     startLog();
 
     const closeLog = async () => {
-      if (!timeLogId) return;
+      const logId = timeLogRef.current;
+      if (!logId) return;
+      
       const end = new Date();
-      const { data } = await supabase.from('founder_time_logs').select('start_time').eq('id', timeLogId).single();
+      const { data } = await supabase.from('founder_time_logs').select('start_time').eq('id', logId).single();
       if (!data) return;
+      
       const start = new Date(data.start_time);
       const duration = Math.round((end.getTime() - start.getTime()) / 60000);
-      await supabase.from('founder_time_logs').update({ end_time: end.toISOString(), duration_minutes: duration }).eq('id', timeLogId).catch(() => {});
+      
+      await supabase.from('founder_time_logs')
+        .update({ end_time: end.toISOString(), duration_minutes: duration })
+        .eq('id', logId)
+        .catch(() => {});
     };
 
     window.addEventListener('beforeunload', closeLog);
