@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import AppHeader from '@/components/AppHeader';
 import AIAdvisorPanel from '@/components/AIAdvisorPanel';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
 import { Loader2, Plus, Trash2, ArrowLeft, FileText, Send, CheckCircle, AlertCircle, Download, FileDown } from 'lucide-react';
 
 const QuoteEditorPage = () => {
@@ -280,7 +280,7 @@ const QuoteEditorPage = () => {
       doc.setFont('helvetica', 'normal');
     }
 
-    autoTable(doc, {
+    (doc as any).autoTable({
       startY: cursorY,
       head: [['SKU', 'Qty', 'Unit Price (RM)', 'Line Total (RM)', 'Group', 'A3 Approved']],
       body: items.map(item => [
