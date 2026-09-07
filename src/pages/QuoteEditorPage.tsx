@@ -252,9 +252,12 @@ const QuoteEditorPage = () => {
                 <div className="rounded-xl border bg-white p-6 space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold">{invoice.invoice_number}</h3>
-                    <Badge className={invoice.payment_status === 'Paid' ? 'bg-green-500' : 'bg-orange-500'}>
-                      {invoice.payment_status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2.5 w-2.5 rounded-full ${invoice.payment_status === 'Paid' ? 'bg-green-500' : 'bg-orange-500 animate-pulse'}`} />
+                      <Badge className={invoice.payment_status === 'Paid' ? 'bg-green-500' : 'bg-orange-500'}>
+                        {invoice.payment_status}
+                      </Badge>
+                    </div>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Due: {new Date(invoice.due_date).toLocaleDateString()}
