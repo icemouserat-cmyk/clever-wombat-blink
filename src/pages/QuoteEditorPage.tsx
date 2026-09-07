@@ -4,9 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import AppSidebar from '@/components/AppSidebar';
 import AIAdvisorPanel from '@/components/AIAdvisorPanel';
-import { Loader2, FileText } from 'lucide-react';
+import { Loader2, FileText, CheckCircle } from 'lucide-react';
 import { useQuoteTimeTracking } from '@/hooks/useQuoteTimeTracking';
 import { useQuoteExport } from '@/hooks/useQuoteExport';
 import QuoteHeader from '@/components/QuoteHeader';
@@ -149,6 +150,20 @@ const QuoteEditorPage = () => {
     }
   };
 
+  const handleMarkAsOrder = async () => {
+    try {
+      const { error } = await supabase
+        .from('quotations')
+        .update({ status: 'Order' })
+        .eq('id', quoteId);
+      if (error) throw error;
+      setQuotation((prev: any) => ({ ...prev, status: 'Order' }));
+      toast({ title: 'Order Confirmed', description: 'Quotation converted to a confirmed Order.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen bg-slate-50">
@@ -171,6 +186,7 @@ const QuoteEditorPage = () => {
             onExportCsv={() => exportCsv(quotation, customer, items)}
             onExportPdf={() => exportPdf(quotation, customer, items, logoUrl)}
             onMarkAsSent={handleMarkAsSent}
+            onMarkAsOrder={handleMarkAsOrder}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

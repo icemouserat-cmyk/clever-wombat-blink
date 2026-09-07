@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, FileDown, Send } from 'lucide-react';
+import { ArrowLeft, Download, FileDown, Send, CheckCircle } from 'lucide-react';
 
 interface QuoteHeaderProps {
   quotation: any;
@@ -10,9 +10,10 @@ interface QuoteHeaderProps {
   onExportCsv: () => void;
   onExportPdf: () => void;
   onMarkAsSent: () => void;
+  onMarkAsOrder: () => void;
 }
 
-const QuoteHeader = ({ quotation, customer, onExportCsv, onExportPdf, onMarkAsSent }: QuoteHeaderProps) => {
+const QuoteHeader = ({ quotation, customer, onExportCsv, onExportPdf, onMarkAsSent, onMarkAsOrder }: QuoteHeaderProps) => {
   const navigate = useNavigate();
 
   return (
@@ -55,6 +56,11 @@ const QuoteHeader = ({ quotation, customer, onExportCsv, onExportPdf, onMarkAsSe
           {quotation?.status === 'Draft' && (
             <Button onClick={onMarkAsSent} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
               <Send className="h-4 w-4" /> Mark as Sent
+            </Button>
+          )}
+          {quotation?.status === 'Sent' && (
+            <Button onClick={onMarkAsOrder} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700">
+              <CheckCircle className="h-4 w-4" /> Mark as Order
             </Button>
           )}
         </div>
