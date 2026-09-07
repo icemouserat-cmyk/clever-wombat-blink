@@ -20,6 +20,7 @@ const InquiryForm = () => {
     name: '',
     referralSource: '',
     staffSize: '',
+    address: '',
     notes: '',
   });
 
@@ -42,6 +43,7 @@ const InquiryForm = () => {
           name: formData.name,
           referral_source: formData.referralSource,
           staff_size: size,
+          address: formData.address,
         })
         .select()
         .single();
@@ -60,7 +62,7 @@ const InquiryForm = () => {
       if (quoteError) throw quoteError;
 
       toast({ title: 'Inquiry Captured', description: 'Customer and draft quotation created.' });
-      setFormData({ name: '', referralSource: '', staffSize: '', notes: '' });
+      setFormData({ name: '', referralSource: '', staffSize: '', address: '', notes: '' });
       navigate('/quotations');
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -90,6 +92,10 @@ const InquiryForm = () => {
           <Label htmlFor="staff">Staff Size (20-150)</Label>
           <Input id="staff" type="number" value={formData.staffSize} onChange={(e) => setFormData({ ...formData, staffSize: e.target.value })} required />
         </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="address">Delivery/Billing Address</Label>
+        <Textarea id="address" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} rows={2} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="notes">Inquiry Notes</Label>
