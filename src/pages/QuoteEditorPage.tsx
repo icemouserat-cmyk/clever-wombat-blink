@@ -1,24 +1,24 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import AppSidebar from '@/components/AppSidebar';
 import AIAdvisorPanel from '@/components/AIAdvisorPanel';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { Loader2, Plus, Trash2, ArrowLeft, FileText, Send, CheckCircle, AlertCircle, Download, FileDown } from 'lucide-react';
+import { Loader2, FileText } from 'lucide-react';
+import { useQuoteTimeTracking } from '@/hooks/useQuoteTimeTracking';
+import { useQuoteExport } from '@/hooks/useQuoteExport';
+import QuoteHeader from '@/components/QuoteHeader';
+import QuoteItemManager from '@/components/QuoteItemManager';
+import QuoteItemsTable from '@/components/QuoteItemsTable';
 
 const QuoteEditorPage = () => {
   const { id: quoteId } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { exportCsv, exportPdf } = useQuoteExport();
+  useQuoteTimeTracking(quoteId, user?.id);
 
   const [isLoading, setIsLoading] = useState(true);
   const [quotation, setQuotation] = useState<any>(null);
@@ -26,64 +26,10 @@ const QuoteEditorPage = () => {
   const [items, setItems] = useState<any[]>([]);
   const [priceList, setPriceList] = useState<any[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  
-  const timeLogRef = useRef<string | null>(null);
-
-  const [selectedSku, setSelectedSku] = useState('');
-  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     if (quoteId) loadQuoteData();
   }, [quoteId]);
-
-  useEffect(() => {
-    if (!quoteId || !user) return;
-
-    const startLog = async () => {
-      const { data, error } = await supabase
-        .from('founder_time_logs')
-        .insert({
-          user_id: user.id,
-          quotation_id: quoteId,
-          start_time: new Date().toISOString(),
-        })
-        .select()
-        .single();
-      if (!error && data) {
-        timeLogRef.current = data.id;
-      }
-    };
-
-    startLog();
-
-    const closeLog = async () => {
-      const logId = timeLogRef.current;
-      if (!logId) return;
-      
-      const end = new Date();
-      const { data } = await supabase.from('founder_time_logs').select('start_time').eq('id', logId).single();
-      if (!data) return;
-      
-      const start = new Date(data.start_time);
-      const duration = Math.round((end.getTime() - start.getTime()) / 60000);
-      
-      try {
-        await supabase
-          .from('founder_time_logs')
-          .update({ end_time: end.toISOString(), duration_minutes: duration })
-          .eq('id', logId);
-      } catch {
-        // best-effort — ignore errors during unload/navigation
-      }
-    };
-
-    window.addEventListener('beforeunload', closeLog);
-
-    return () => {
-      window.removeEventListener('beforeunload', closeLog);
-      closeLog();
-    };
-  }, [quoteId, user]);
 
   const loadQuoteData = async () => {
     setIsLoading(true);
@@ -121,9 +67,9 @@ const QuoteEditorPage = () => {
     setQuotation((prev: any) => ({ ...prev, total_amount: data.total_amount }));
   };
 
-  const handleAddItem = async () => {
-    if (!selectedSku || !user) return;
-    const itemData = priceList.find(p => p.sku === selectedSku);
+  const handleAddItem = async (sku: string, quantity: number) => {
+    if (!user) return;
+    const itemData = priceList.find(p => p.sku === sku);
     if (!itemData) return;
 
     const markup = 0.19;
@@ -137,7 +83,7 @@ const QuoteEditorPage = () => {
         .insert({
           quotation_id: quoteId,
           user_id: user.id,
-          sku: selectedSku,
+          sku: sku,
           quantity: quantity,
           unit_price: unitPrice,
           line_total: lineTotal,
@@ -151,9 +97,7 @@ const QuoteEditorPage = () => {
 
       await refreshQuotationTotal();
       setItems(prev => [...prev, newItem]);
-      setSelectedSku('');
-      setQuantity(1);
-      toast({ title: 'Item Added', description: `Added ${selectedSku} to quotation.` });
+      toast({ title: 'Item Added', description: `Added ${sku} to quotation.` });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
@@ -205,158 +149,6 @@ const QuoteEditorPage = () => {
     }
   };
 
-  const escapeCsv = (val: any) => {
-    const str = String(val ?? '');
-    if (str.includes(',') || str.includes('\"') || str.includes('\\n')) {
-      return `\"${str.replace(/\"/g, '\"\"')}\"`;
-    }
-    return str;
-  };
-
-  const handleExportCsv = () => {
-    if (!quotation || !customer) return;
-
-    const headerRows = [
-      ['Field', 'Value'],
-      ['Quotation ID', quotation.id],
-      ['Status', quotation.status],
-      ['Customer Name', customer.name],
-      ['Referral Source', customer.referral_source],
-      ['Staff Size', customer.staff_size],
-      ['Created At', quotation.created_at],
-      ['Sent At', quotation.sent_at || ''],
-      ['Total Amount (RM)', Number(quotation.total_amount).toFixed(2)],
-      ['Notes', quotation.notes || ''],
-      [],
-      ['SKU', 'Quantity', 'Unit Price (RM)', 'Line Total (RM)', 'Item Group', 'Requires A3 Approval', 'Approved'],
-    ];
-
-    const itemRows = items.map(item => [
-      item.sku,
-      item.quantity,
-      item.unit_price.toFixed(2),
-      item.line_total.toFixed(2),
-      item.requires_a3_approval ? 'Furniture - Custom' : 'Furniture - Standard',
-      item.requires_a3_approval ? 'Yes' : 'No',
-      item.is_approved ? 'Yes' : 'No',
-    ]);
-
-    const allRows = [...headerRows, ...itemRows];
-    const csvContent = allRows.map(row => row.map(escapeCsv).join(',')).join('\\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    const safeCustomerName = (customer.name || 'quotation').replace(/[^a-z0-9]/gi, '_');
-    link.download = `AuraSpace_Quote_${safeCustomerName}_${quotation.id.slice(0, 8)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    toast({ title: 'Exported', description: 'Quotation CSV downloaded.' });
-  };
-
-  const loadImageAsDataUrl = (url: string): Promise<string | null> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) { resolve(null); return; }
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        } catch {
-          resolve(null);
-        }
-      };
-      img.onerror = () => resolve(null);
-      img.src = url;
-    });
-  };
-
-  const handleExportPdf = async () => {
-    if (!quotation || !customer) return;
-
-    const doc = new jsPDF();
-    let cursorY = 15;
-
-    if (logoUrl) {
-      const dataUrl = await loadImageAsDataUrl(logoUrl);
-      if (dataUrl) {
-        try {
-          doc.addImage(dataUrl, 'PNG', 14, cursorY, 30, 30);
-          cursorY += 5;
-        } catch {
-          // If image embedding fails, continue without it rather than blocking export
-        }
-      }
-    }
-
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text('AuraSpace Sdn Bhd', logoUrl ? 50 : 14, cursorY + 8);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Quotation', logoUrl ? 50 : 14, cursorY + 14);
-
-    cursorY += 35;
-
-    doc.setFontSize(11);
-    doc.text(`Quotation ID: ${quotation.id.slice(0, 8)}`, 14, cursorY);
-    doc.text(`Status: ${quotation.status}`, 140, cursorY);
-    cursorY += 6;
-    doc.text(`Customer: ${customer.name}`, 14, cursorY);
-    doc.text(`Created: ${new Date(quotation.created_at).toLocaleDateString()}`, 140, cursorY);
-    cursorY += 6;
-    doc.text(`Referral Source: ${customer.referral_source}`, 14, cursorY);
-    if (quotation.sent_at) {
-      doc.text(`Sent: ${new Date(quotation.sent_at).toLocaleDateString()}`, 140, cursorY);
-    }
-    cursorY += 6;
-    doc.text(`Staff Size: ${customer.staff_size}`, 14, cursorY);
-    cursorY += 10;
-
-    if (quotation.notes) {
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(9);
-      const noteLines = doc.splitTextToSize(`Notes: ${quotation.notes}`, 180);
-      doc.text(noteLines, 14, cursorY);
-      cursorY += noteLines.length * 5 + 5;
-      doc.setFont('helvetica', 'normal');
-    }
-
-    (doc as any).autoTable({
-      startY: cursorY,
-      head: [['SKU', 'Qty', 'Unit Price (RM)', 'Line Total (RM)', 'Group', 'A3 Approved']],
-      body: items.map(item => [
-        item.sku,
-        String(item.quantity),
-        item.unit_price.toFixed(2),
-        item.line_total.toFixed(2),
-        item.requires_a3_approval ? 'Custom' : 'Standard',
-        item.requires_a3_approval ? (item.is_approved ? 'Yes' : 'No') : 'N/A',
-      ]),
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [79, 70, 229] },
-    });
-
-    const finalY = (doc as any).lastAutoTable.finalY || cursorY + 20;
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Total: RM ${Number(quotation.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 140, finalY + 10);
-
-    const safeCustomerName = (customer.name || 'quotation').replace(/[^a-z0-9]/gi, '_');
-    doc.save(`AuraSpace_Quote_${safeCustomerName}_${quotation.id.slice(0, 8)}.pdf`);
-
-    toast({ title: 'Exported', description: 'Quotation PDF downloaded.' });
-  };
-
   if (isLoading) {
     return (
       <div className="flex min-h-screen bg-slate-50">
@@ -373,83 +165,18 @@ const QuoteEditorPage = () => {
       <AppSidebar />
       <main className="flex-1 px-8 py-12">
         <div className="container mx-auto py-8 px-4 max-w-6xl space-y-8">
-          <div className="flex justify-between items-start">
-            <div className="space-y-1">
-              <Button variant="ghost" onClick={() => navigate('/quotations')} className="mb-4 -ml-4 text-muted-foreground">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Quotations
-              </Button>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight">Quotation Builder</h1>
-                <Badge variant="outline" className="text-sm">{quotation?.status}</Badge>
-              </div>
-              <p className="text-muted-foreground">
-                Customer: <span className="font-medium text-foreground">{customer?.name}</span> |
-                Staff Size: <span className="font-medium text-foreground">{customer?.staff_size}</span>
-              </p>
-              {customer?.address && (
-                <span className="block text-sm mt-1">
-                  Address: <span className="font-medium text-foreground">{customer.address}</span>
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right space-y-1">
-                <p className="text-sm text-muted-foreground">Total Amount</p>
-                <p className="text-4xl font-bold text-primary">
-                  RM {quotation?.total_amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={items.length === 0} className="flex items-center gap-2">
-                    <Download className="h-4 w-4" /> CSV
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={items.length === 0} className="flex items-center gap-2">
-                    <FileDown className="h-4 w-4" /> PDF
-                  </Button>
-                </div>
-                {quotation?.status === 'Draft' && (
-                  <Button onClick={handleMarkAsSent} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
-                    <Send className="h-4 w-4" /> Mark as Sent
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
+          <QuoteHeader 
+            quotation={quotation} 
+            customer={customer} 
+            onExportCsv={() => exportCsv(quotation, customer, items)}
+            onExportPdf={() => exportPdf(quotation, customer, items, logoUrl)}
+            onMarkAsSent={handleMarkAsSent}
+          />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-4 space-y-6">
-              <div className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <Plus className="h-5 w-5" /> Add Line Item
-                </h2>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Select Item (SKU)</Label>
-                    <Select value={selectedSku} onValueChange={setSelectedSku}>
-                      <SelectTrigger><SelectValue placeholder="Choose a product..." /></SelectTrigger>
-                      <SelectContent>
-                        {priceList.map(p => (
-                          <SelectItem key={p.id} value={p.sku}>
-                            {p.sku} - {p.description} (RM {p.base_cost})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Quantity</Label>
-                    <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} />
-                  </div>
-                  <Button className="w-full" onClick={handleAddItem} disabled={!selectedSku}>
-                    Add to Quotation
-                  </Button>
-                </div>
-              </div>
-
+              <QuoteItemManager priceList={priceList} onAddItem={handleAddItem} />
               <AIAdvisorPanel quotation={quotation} customer={customer} items={items} />
-
               <div className="rounded-xl border bg-slate-50 p-6 space-y-3">
                 <h3 className="text-sm font-medium text-slate-500 flex items-center gap-2">
                   <FileText className="h-4 w-4" /> Inquiry Notes
@@ -461,65 +188,11 @@ const QuoteEditorPage = () => {
             </div>
 
             <div className="lg:col-span-8 space-y-4">
-              <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 border-b">
-                    <tr>
-                      <th className="text-left font-medium px-4 py-3">SKU</th>
-                      <th className="text-left font-medium px-4 py-3">Qty</th>
-                      <th className="text-left font-medium px-4 py-3">Unit Price</th>
-                      <th className="text-left font-medium px-4 py-3">Total</th>
-                      <th className="text-left font-medium px-4 py-3">Approval</th>
-                      <th className="text-right font-medium px-4 py-3">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="text-center py-12 text-muted-foreground">
-                          No items added to this quotation yet.
-                        </td>
-                      </tr>
-                    ) : (
-                      items.map((item) => (
-                        <tr key={item.id} className="border-b last:border-b-0">
-                          <td className="px-4 py-2 font-mono font-medium">{item.sku}</td>
-                          <td className="px-4 py-2">{item.quantity}</td>
-                          <td className="px-4 py-2">RM {item.unit_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                          <td className="px-4 py-2 font-medium">RM {item.line_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                          <td className="px-4 py-2">
-                            {item.requires_a3_approval ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleToggleApproval(item.id, item.is_approved)}
-                                className="h-7 px-2"
-                              >
-                                {item.is_approved ? (
-                                  <Badge className="bg-green-500 hover:bg-green-600 flex items-center gap-1">
-                                    <CheckCircle className="h-3 w-3" /> Approved
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-red-500 hover:bg-red-600 flex items-center gap-1">
-                                    <AlertCircle className="h-3 w-3" /> Pending A3
-                                  </Badge>
-                                )}
-                              </Button>
-                            ) : (
-                              <Badge variant="secondary" className="font-normal">Standard</Badge>
-                            )}
-                          </td>
-                          <td className="px-4 py-2 text-right">
-                            <Button variant="ghost" size="sm" onClick={() => handleRemoveItem(item.id)} className="text-destructive hover:text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <QuoteItemsTable 
+                items={items} 
+                onRemoveItem={handleRemoveItem} 
+                onToggleApproval={handleToggleApproval} 
+              />
             </div>
           </div>
         </div>
