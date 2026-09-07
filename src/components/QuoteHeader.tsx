@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, FileDown, Send, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Download, FileDown, Send, CheckCircle, FileText } from 'lucide-react';
 
 interface QuoteHeaderProps {
   quotation: any;
@@ -11,9 +11,11 @@ interface QuoteHeaderProps {
   onExportPdf: () => void;
   onMarkAsSent: () => void;
   onMarkAsOrder: () => void;
+  onGenerateInvoice: () => void;
+  invoice: any;
 }
 
-const QuoteHeader = ({ quotation, customer, onExportCsv, onExportPdf, onMarkAsSent, onMarkAsOrder }: QuoteHeaderProps) => {
+const QuoteHeader = ({ quotation, customer, onExportCsv, onExportPdf, onMarkAsSent, onMarkAsOrder, onGenerateInvoice, invoice }: QuoteHeaderProps) => {
   const navigate = useNavigate();
 
   return (
@@ -61,6 +63,11 @@ const QuoteHeader = ({ quotation, customer, onExportCsv, onExportPdf, onMarkAsSe
           {quotation?.status === 'Sent' && (
             <Button onClick={onMarkAsOrder} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700">
               <CheckCircle className="h-4 w-4" /> Mark as Order
+            </Button>
+          )}
+          {quotation?.status === 'Order' && !invoice && (
+            <Button onClick={onGenerateInvoice} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
+              <FileText className="h-4 w-4" /> Generate Invoice
             </Button>
           )}
         </div>
