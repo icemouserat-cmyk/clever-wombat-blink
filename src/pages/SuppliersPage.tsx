@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Plus, Database } from 'lucide-//react';
+import { Loader2, Trash2, Plus, Database } from 'lucide-react';
 
 const SuppliersPage = () => {
   const { user } = useAuth();
@@ -59,9 +59,9 @@ const SuppliersPage = () => {
             <div>
               <h1 className="text-3xl font-bold">Supplier Management</h1>
               <p className="text-muted-foreground">Manage your factory partner references.</p>
-            </div>
+            </div
             <Button variant="outline" onClick={seedSuppliers} disabled={isLoading} className="gap-2"><Database className="h-4 w-4" /> Seed</Button>
-          </div>
+          </div
           {isLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
           ) : (
@@ -72,32 +72,32 @@ const SuppliersPage = () => {
                   <div className="space-y-2">
                     <Label>Supplier Name</Label>
                     <Input value={name} onChange={(e) => setName(e.target.value)} required />
-                  </div>
+                  </div
                   <Button type="submit" className="w-full gap-2"><Plus className="h-4 w-4" /> Add</Button>
                 </form>
-              </div>
+              </div
               <div className="lg:col-span-2 border rounded-xl bg-white overflow-hidden">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 border-b">
                     <tr><th className="text-left px-4 py-3 font-medium">Name</th><th className="text-right px-4 py-3 font-medium">Action</th></tr>
-                  </thead>
+                  </thead
                   <tbody>
                     {suppliers.map(s => (
                       <tr key={s.id} className="border-b last:border-b-0">
                         <td className="px-4 py-2">{s.name}</td>
                         <td className="px-4 py-2 text-right">
                           <Button variant="ghost" size="sm" onClick={() => deleteSupplier(s.id)} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
-                        </td>
+                        </td
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </div>
+              </div
+            </div
           )}
-        </div>
+        </div
       </main>
-    </div>
+    </div
   );
 };
 

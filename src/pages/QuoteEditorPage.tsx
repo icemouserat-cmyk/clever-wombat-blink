@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import AppHeader from '@/components/AppHeader';
+import AppSidebar from '@/components/AppSidebar';
 import AIAdvisorPanel from '@/components/AIAdvisorPanel';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -207,8 +207,8 @@ const QuoteEditorPage = () => {
 
   const escapeCsv = (val: any) => {
     const str = String(val ?? '');
-    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-      return `"${str.replace(/"/g, '""')}"`;
+    if (str.includes(',') || str.includes('\"') || str.includes('\\n')) {
+      return `\"${str.replace(/\"/g, '\"\"')}\"`;
     }
     return str;
   };
@@ -242,7 +242,7 @@ const QuoteEditorPage = () => {
     ]);
 
     const allRows = [...headerRows, ...itemRows];
-    const csvContent = allRows.map(row => row.map(escapeCsv).join(',')).join('\n');
+    const csvContent = allRows.map(row => row.map(escapeCsv).join(',')).join('\\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -359,162 +359,167 @@ const QuoteEditorPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex min-h-screen bg-slate-50">
+        <AppSidebar />
+        <main className="flex-1 px-8 py-12 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AppHeader />
-      <div className="container mx-auto py-8 px-4 max-w-6xl space-y-8">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1">
-            <Button variant="ghost" onClick={() => navigate('/quotations')} className="mb-4 -ml-4 text-muted-foreground">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Quotations
-            </Button>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">Quotation Builder</h1>
-              <Badge variant="outline" className="text-sm">{quotation?.status}</Badge>
-            </div>
-            <p className="text-muted-foreground">
-              Customer: <span className="font-medium text-foreground">{customer?.name}</span> |
-              Staff Size: <span className="font-medium text-foreground">{customer?.staff_size}</span>
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right space-y-1">
-              <p className="text-sm text-muted-foreground">Total Amount</p>
-              <p className="text-4xl font-bold text-primary">
-                RM {quotation?.total_amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+    <div className="flex min-h-screen bg-slate-50">
+      <AppSidebar />
+      <main className="flex-1 px-8 py-12">
+        <div className="container mx-auto py-8 px-4 max-w-6xl space-y-8">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <Button variant="ghost" onClick={() => navigate('/quotations')} className="mb-4 -ml-4 text-muted-foreground">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Quotations
+              </Button>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold tracking-tight">Quotation Builder</h1>
+                <Badge variant="outline" className="text-sm">{quotation?.status}</Badge>
+              </div
+              <p className="text-muted-foreground">
+                Customer: <span className="font-medium text-foreground">{customer?.name}</span> |\
+                Staff Size: <span className="font-medium text-foreground">{customer?.staff_size}</span>
               </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={items.length === 0} className="flex items-center gap-2">
-                  <Download className="h-4 w-4" /> CSV
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={items.length === 0} className="flex items-center gap-2">
-                  <FileDown className="h-4 w-4" /> PDF
-                </Button>
-              </div>
-              {quotation?.status === 'Draft' && (
-                <Button onClick={handleMarkAsSent} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
-                  <Send className="h-4 w-4" /> Mark as Sent
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+            </div
+            <div className="flex items-center gap-4">
+              <div className="text-right space-y-1">
+                <p className="text-sm text-muted-foreground">Total Amount</p>
+                <p className="text-4xl font-bold text-primary">
+                  RM {quotation?.total_amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={items.length === 0} className="flex items-center gap-2">
+                    <Download className="h-4 w-4" /> CSV
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={items.length === 0} className="flex items-center gap-2">
+                    <FileDown className="h-4 w-4" /> PDF
+                  </Button>
+                </div
+                {quotation?.status === 'Draft' && (
+                  <Button onClick={handleMarkAsSent} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
+                    <Send className="h-4 w-4" /> Mark as Sent
+                  </Button>
+                )}
+              </div
+            </div
+          </div
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-4 space-y-6">
-            <div className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Plus className="h-5 w-5" /> Add Line Item
-              </h2>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Select Item (SKU)</Label>
-                  <Select value={selectedSku} onValueChange={setSelectedSku}>
-                    <SelectTrigger><SelectValue placeholder="Choose a product..." /></SelectTrigger>
-                    <SelectContent>
-                      {priceList.map(p => (
-                        <SelectItem key={p.id} value={p.sku}>
-                          {p.sku} - {p.description} (RM {p.base_cost})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Quantity</Label>
-                  <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} />
-                </div>
-                <Button className="w-full" onClick={handleAddItem} disabled={!selectedSku}>
-                  Add to Quotation
-                </Button>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-4 space-y-6">
+              <div className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Plus className="h-5 w-5" /> Add Line Item
+                </h2>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Select Item (SKU)</Label>
+                    <Select value={selectedSku} onValueChange={setSelectedSku}>
+                      <SelectTrigger><SelectValue placeholder="Choose a product..." /></SelectTrigger>
+                      <SelectContent>
+                        {priceList.map(p => (
+                          <SelectItem key={p.id} value={p.sku}>
+                            {p.sku} - {p.description} (RM {p.base_cost})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div
+                  <div className="space-y-2">
+                    <Label>Quantity</Label>
+                    <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} />
+                  </div
+                  <Button className="w-full" onClick={handleAddItem} disabled={!selectedSku}>
+                    Add to Quotation
+                  </Button>
+                </div
+              </div
 
-            <AIAdvisorPanel quotation={quotation} customer={customer} items={items} />
+              <AIAdvisorPanel quotation={quotation} customer={customer} items={items} />
 
-            <div className="rounded-xl border bg-slate-50 p-6 space-y-3">
-              <h3 className="text-sm font-medium text-slate-500 flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Inquiry Notes
-              </h3>
-              <p className="text-sm text-slate-700 italic whitespace-pre-wrap">
-                {quotation?.notes || 'No specific notes provided for this inquiry.'}
-              </p>
-            </div>
-          </div>
+              <div className="rounded-xl border bg-slate-50 p-6 space-y-3">
+                <h3 className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Inquiry Notes
+                </h3>
+                <p className="text-sm text-slate-700 italic whitespace-pre-wrap">
+                  {quotation?.notes || 'No specific notes provided for this inquiry.'}
+                </p>
+              </div
+            </div
 
-          <div className="lg:col-span-8 space-y-4">
-            <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b">
-                  <tr>
-                    <th className="text-left font-medium px-4 py-3">SKU</th>
-                    <th className="text-left font-medium px-4 py-3">Qty</th>
-                    <th className="text-left font-medium px-4 py-3">Unit Price</th>
-                    <th className="text-left font-medium px-4 py-3">Total</th>
-                    <th className="text-left font-medium px-4 py-3">Approval</th>
-                    <th className="text-right font-medium px-4 py-3">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.length === 0 ? (
+            <div className="lg:col-span-8 space-y-4">
+              <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 border-b">
                     <tr>
-                      <td colSpan={6} className="text-center py-12 text-muted-foreground">
-                        No items added to this quotation yet.
-                      </td>
+                      <th className="text-left font-medium px-4 py-3">SKU</th>
+                      <th className="text-left font-medium px-4 py-3">Qty</th>
+                      <th className="text-left font-medium px-4 py-3">Unit Price</th>
+                      <th className="text-left font-medium px-4 py-3">Total</th>
+                      <th className="text-left font-medium px-4 py-3">Approval</th>
+                      <th className="text-right font-medium px-4 py-3">Action</th>
                     </tr>
-                  ) : (
-                    items.map((item) => (
-                      <tr key={item.id} className="border-b last:border-b-0">
-                        <td className="px-4 py-2 font-mono font-medium">{item.sku}</td>
-                        <td className="px-4 py-2">{item.quantity}</td>
-                        <td className="px-4 py-2">RM {item.unit_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                        <td className="px-4 py-2 font-medium">RM {item.line_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                        <td className="px-4 py-2">
-                          {item.requires_a3_approval ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleToggleApproval(item.id, item.is_approved)}
-                              className="h-7 px-2"
-                            >
-                              {item.is_approved ? (
-                                <Badge className="bg-green-500 hover:bg-green-600 flex items-center gap-1">
-                                  <CheckCircle className="h-3 w-3" /> Approved
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-red-500 hover:bg-red-600 flex items-center gap-1">
-                                  <AlertCircle className="h-3 w-3" /> Pending A3
-                                </Badge>
-                              )}
-                            </Button>
-                          ) : (
-                            <Badge variant="secondary" className="font-normal">Standard</Badge>
-                          )}
-                        </td>
-                        <td className="px-4 py-2 text-right">
-                          <Button variant="ghost" size="sm" onClick={() => handleRemoveItem(item.id)} className="text-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                  </thead>
+                  <tbody>
+                    {items.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="text-center py-12 text-muted-foreground">
+                          No items added to this quotation yet.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                    ) : (
+                      items.map((item) => (
+                        <tr key={item.id} className="border-b last:border-b-0">
+                          <td className="px-4 py-2 font-mono font-medium">{item.sku}</td>
+                          <td className="px-4 py-2">{item.quantity}</td>
+                          <td className="px-4 py-2">RM {item.unit_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                          <td className="px-4 py-2 font-medium">RM {item.line_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                          <td className="px-4 py-2">
+                            {item.requires_a3_approval ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleToggleApproval(item.id, item.is_approved)}
+                                className="h-7 px-2"
+                              >
+                                {item.is_approved ? (
+                                  <Badge className="bg-green-500 hover:bg-green-600 flex items-center gap-1">
+                                    <CheckCircle className="h-3 w-3" /> Approved
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-red-500 hover:bg-red-600 flex items-center gap-1">
+                                    <AlertCircle className="h-3 w-3" /> Pending A3
+                                  </Badge>
+                                )}
+                              </Button>
+                            ) : (
+                              <Badge variant="secondary" className="font-normal">Standard</Badge>
+                            )}
+                          </td
+                          <td className="px-4 py-2 text-right">
+                            <Button variant="ghost" size="sm" onClick={() => handleRemoveItem(item.id)} className="text-destructive hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div
+            </div
+          </div
+        </div
+      </main>
+    </div
   );
 };
 

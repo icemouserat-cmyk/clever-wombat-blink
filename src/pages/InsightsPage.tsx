@@ -51,7 +51,7 @@ const InsightsPage = () => {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 25000);
-      const cleanEndpoint = settings.endpoint.trim().replace(/\/+$/, '');
+      const cleanEndpoint = settings.endpoint.trim().replace(/\\/+$/, '');
 
       const res = await fetch(`${cleanEndpoint}/api/chat`, {
         method: 'POST',
@@ -97,20 +97,12 @@ const InsightsPage = () => {
     const pendingA3 = (items || []).filter(i => i.requires_a3_approval && !i.is_approved).length;
     const totalValue = q.reduce((sum, x) => sum + Number(x.total_amount || 0), 0);
 
-    const systemPrompt = `You are a business overview advisor for AuraSpace. You are given ONLY the recorded
-counts below. Summarize the founder's current business state in 3-4 concise sentences. Do not invent
-customer names, specific amounts beyond what is given, or commitments. If a number is zero, say so plainly
-rather than omitting it.`;
+    const systemPrompt = `You are a business overview advisor for AuraSpace. You are given ONLY the recorded\ncounts below. Summarize the founder's current business state in 3-4 concise sentences. Do not invent\ncustomer names, specific amounts beyond what is given, or commitments. If a number is zero, say so plainly\nrather than omitting it.`;
 
-    const userContent = `New inquiries this week: ${inquiriesThisWeek}
-Quotations sent this week: ${sentThisWeek}
-Draft quotations (not yet sent): ${totalDraft}
-Sent quotations (total): ${totalSent}
-Line items pending A3 approval: ${pendingA3}
-Total value across all quotations (RM): ${totalValue.toFixed(2)}`;
+    const userContent = `New inquiries this week: ${inquiriesThisWeek}\nQuotations sent this week: ${sentThisWeek}\nDraft quotations (not yet sent): ${totalDraft}\nSent quotations (total): ${totalSent}\nLine items pending A3 approval: ${pendingA3}\nTotal value across all quotations (RM): ${totalValue.toFixed(2)}`;
 
     const { result, status } = await callOllama(systemPrompt, userContent);
-    setOverviewSummary(// result
+    setOverviewSummary(result);
     setOverviewStatus(status);
     setIsGeneratingOverview(false);
   };
@@ -128,15 +120,9 @@ Total value across all quotations (RM): ${totalValue.toFixed(2)}`;
     const totalValue = q.reduce((sum, x) => sum + Number(x.total_amount || 0), 0);
     const oldestDraft = q.find(x => x.status === 'Draft');
 
-    const systemPrompt = `You are a quotations pipeline advisor for AuraSpace. You are given ONLY the recorded
-data below. Summarize the state of the quotation pipeline in 3-4 concise sentences, noting the status
-breakdown and flagging if any draft quotation looks like it has been sitting too long. Do not invent
-customer names or specific items. If there is no oldest draft, say there are no pending drafts.`;
+    const systemPrompt = `You are a quotations pipeline advisor for AuraSpace. You are given ONLY the recorded\ndata below. Summarize the state of the quotation pipeline in 3-4 concise sentences, noting the status\nbreakdown and flagging if any draft quotation looks like it has been sitting too long. Do not invent\ncustomer names or specific items. If there is no oldest draft, say there are no pending drafts.`;
 
-    const userContent = `Total quotations: ${q.length}
-Status breakdown: ${JSON.stringify(byStatus)}
-Total value across all quotations (RM): ${totalValue.toFixed(2)}
-Oldest still-Draft quotation created at: ${oldestDraft ? oldestDraft.created_at : 'none'}`;
+    const userContent = `Total quotations: ${q.length}\nStatus breakdown: ${JSON.stringify(byStatus)}\nTotal value across all quotations (RM): ${totalValue.toFixed(2)}\nOldest still-Draft quotation created at: ${oldestDraft ? oldestDraft.created_at : 'none'}`;
 
     const { result, status } = await callOllama(systemPrompt, userContent);
     setQuotationsSummary(result);
@@ -156,13 +142,9 @@ Oldest still-Draft quotation created at: ${oldestDraft ? oldestDraft.created_at 
     c.forEach(x => { bySource[x.referral_source] = (bySource[x.referral_source] || 0) + 1; });
     const avgStaffSize = c.length > 0 ? Math.round(c.reduce((sum, x) => sum + (x.staff_size || 0), 0) / c.length) : 0;
 
-    const systemPrompt = `You are a customer base advisor for AuraSpace. You are given ONLY the recorded data
-below. Summarize the customer base in 3-4 concise sentences, noting referral source mix and typical staff
-size. Do not invent specific customer names or details not given.`;
+    const systemPrompt = `You are a customer base advisor for AuraSpace. You are given ONLY the recorded data\nbelow. Summarize the customer base in 3-4 concise sentences, noting referral source mix and typical staff\nsize. Do not invent specific customer names or details not given.`;
 
-    const userContent = `Total customers: ${c.length}
-Referral source breakdown: ${JSON.stringify(bySource)}
-Average staff size: ${avgStaffSize}`;
+    const userContent = `Total customers: ${c.length}\nReferral source breakdown: ${JSON.stringify(bySource)}\nAverage staff size: ${avgStaffSize}`;
 
     const { result, status } = await callOllama(systemPrompt, userContent);
     setCustomersSummary(result);

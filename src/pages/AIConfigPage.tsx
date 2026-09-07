@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import AppHeader from '@/components/AppHeader';
+import AppSidebar from '@/components/AppSidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -57,7 +57,7 @@ const AIConfigPage = () => {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      const cleanEndpoint = endpoint.trim().replace(/\/+$/, '');
+      const cleanEndpoint = endpoint.trim().replace(/\\/+$/, '');
       const res = await fetch(`${cleanEndpoint}/api/tags`, { signal: controller.signal });
       clearTimeout(timeoutId);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -74,72 +74,76 @@ const AIConfigPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <AppHeader />
-        <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
+      <div className="flex min-h-screen bg-slate-50">
+        <AppSidebar />
+        <main className="flex-1 px-8 py-12 flex justify-center items-center">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AppHeader />
-      <div className="container mx-auto py-8 px-4 max-w-2xl space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">AI Advisor Settings</h1>
-          <p className="text-muted-foreground">Configure the local Ollama endpoint used by the quotation advisor.</p>
-        </div>
+    <div className="flex min-h-screen bg-slate-50">
+      <AppSidebar />
+      <main className="flex-1 px-8 py-12">
+        <div className="container mx-auto py-8 px-4 max-w-2xl space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">AI Advisor Settings</h1>
+            <p className="text-muted-foreground">Configure the local Ollama endpoint used by the quotation advisor.</p>
+          </div
 
-        <div className="rounded-xl border bg-white p-6 space-y-4">
-          <div className="space-y-2">
-            <Label>Ollama Endpoint URL</Label>
-            <Input value={endpoint} onChange={(e) => setEndpoint(e.target.value)} placeholder="http://localhost:11434" />
-            <p className="text-xs text-muted-foreground">Ollama must be running locally on this device. This is not a cloud secret and is never sent anywhere except your own configured endpoint.</p>
-          </div>
-
-          <Button variant="outline" onClick={testConnection} disabled={testStatus === 'testing'} className="gap-2">
-            {testStatus === 'testing' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wifi className="h-4 w-4" />}
-            Test Connection
-          </Button>
-
-          {testStatus === 'success' && (
-            <div className="flex items-center gap-2 text-sm text-green-600">
-              <CheckCircle2 className="h-4 w-4" /> Connected — {availableModels.length} model(s) available
-            </div>
-          )}
-          {testStatus === 'error' && (
-            <div className="flex items-center gap-2 text-sm text-destructive">
-              <XCircle className="h-4 w-4" /> Could not reach Ollama. Advisor features will show an offline state until this is resolved.
-            </div>
-          )}
-
-          {availableModels.length > 0 && (
+          <div className="rounded-xl border bg-white p-6 space-y-4">
             <div className="space-y-2">
-              <Label>Model</Label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-              >
-                <option value="">Select a model...</option>
-                {availableModels.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-            </div>
-          )}
+              <Label>Ollama Endpoint URL</Label>
+              <Input value={endpoint} onChange={(e) => setEndpoint(e.target.value)} placeholder="http://localhost:11434" />
+              <p className="text-xs text-muted-foreground">Ollama must be running locally on this device. This is not a cloud secret and is never sent anywhere except your own configured endpoint.</p>
+            </div
 
-          {availableModels.length === 0 && (
-            <div className="space-y-2">
-              <Label>Model name (manual entry)</Label>
-              <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="e.g. qwen2.5:7b" />
-            </div>
-          )}
+            <Button variant="outline" onClick={testConnection} disabled={testStatus === 'testing'} className="gap-2">
+              {testStatus === 'testing' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wifi className="h-4 w-4" />}\
+              Test Connection
+            </Button
 
-          <Button onClick={saveSettings} disabled={!model} className="w-full">Save Settings</Button>
-        </div>
-      </div>
-    </div>
+            {testStatus === 'success' && (
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <CheckCircle2 className="h-4 w-4" /> Connected — {availableModels.length} model(s) available
+              </div
+            )}
+            {testStatus === 'error' && (
+              <div className="flex items-center gap-2 text-sm text-destructive">
+                <XCircle className="h-4 w-4" /> Could not reach Ollama. Advisor features will show an offline state until this is resolved.
+              </div
+            )}
+
+            {availableModels.length > 0 && (
+              <div className="space-y-2">
+                <Label>Model</Label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                >
+                  <option value="">Select a model...</option>
+                  {availableModels.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div
+            )}
+
+            {availableModels.length === 0 && (
+              <div className="space-y-2">
+                <Label>Model name (manual entry)</Label>
+                <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="e.g. qwen2.5:7b" />
+              </div
+            )}
+
+            <Button onClick={saveSettings} disabled={!model} className="w-full">Save Settings</Button>
+          </div
+        </div
+      </main>
+    </div
   );
 };
 
