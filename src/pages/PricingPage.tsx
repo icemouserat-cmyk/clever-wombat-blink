@@ -90,9 +90,9 @@ const PricingPage = () => {
             <div>
               <h1 className="text-3xl font-bold">Master Price List</h1>
               <p className="text-muted-foreground">Central pricing control.</p>
-            </div
+            </div>
             <Button variant="outline" onClick={seedCatalogue} disabled={isLoading} className="gap-2"><Database className="h-4 w-4" /> Seed</Button>
-          </div
+          </div>
           {isLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
           ) : (
@@ -112,7 +112,7 @@ const PricingPage = () => {
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">SKU</p>
                         <p className="font-mono font-medium text-sm">{item.sku}</p>
-                      </div
+                      </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Description</p>
                         <Input
@@ -121,7 +121,7 @@ const PricingPage = () => {
                           onChange={(e) => updateLocal(item.id, { description: e.target.value })}
                           onBlur={() => handleSave(item.id)}
                         />
-                      </div
+                      </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Cost (RM)</p>
                         <Input
@@ -135,7 +135,7 @@ const PricingPage = () => {
                           }}
                           onBlur={() => handleSave(item.id)}
                         />
-                      </div
+                      </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Group</p>
                         <Select value={edit.item_group ?? item.item_group} onValueChange={(val: any) => { updateLocal(item.id, { item_group: val }); handleSave(item.id, { item_group: val }); }}>
@@ -145,29 +145,29 @@ const PricingPage = () => {
                             <SelectItem value="Furniture - Custom">Custom</SelectItem>
                           </SelectContent>
                         </Select>
-                      </div
+                      </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Supplier</p>
                         <Select value={(edit.supplier_id ?? item.supplier_id) || ''} onValueChange={(val) => { updateLocal(item.id, { supplier_id: val || null }); handleSave(item.id, { supplier_id: val || null }); }}>
                           <SelectTrigger className="h-8 w-full"><SelectValue placeholder="None" /></SelectTrigger>
                           <SelectContent>{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                         </Select>
-                      </div
-                    </div
+                      </div>
+                    </div>
                     <div className="flex items-center gap-2 pt-1">
-                      {status === 'saving' && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}\
-                      {status === 'saved' && <CheckCircle2 className="h-4 w-4 text-green-500" />}\
-                      {status === 'error' && <AlertCircle className="h-4 w-4 text-destructive" />}\
+                      {status === 'saving' && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
+                      {status === 'saved' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                      {status === 'error' && <AlertCircle className="h-4 w-4 text-destructive" />}
                       <Button variant="ghost" size="sm" onClick={() => handleSave(item.id)} disabled={status === 'saving'}><Save className="h-4 w-4" /></Button>
-                    </div
-                  </div
+                    </div>
+                  </div>
                 );
               })}
-            </div
+            </div>
           )}
-        </div
+        </div>
       </main>
-    </div
+    </div>
   );
 };
 

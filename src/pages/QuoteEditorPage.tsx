@@ -382,19 +382,19 @@ const QuoteEditorPage = () => {
               <div className="flex items-center gap-3">
                 <h1 className="text-3xl font-bold tracking-tight">Quotation Builder</h1>
                 <Badge variant="outline" className="text-sm">{quotation?.status}</Badge>
-              </div
+              </div>
               <p className="text-muted-foreground">
-                Customer: <span className="font-medium text-foreground">{customer?.name}</span> |\
+                Customer: <span className="font-medium text-foreground">{customer?.name}</span> |
                 Staff Size: <span className="font-medium text-foreground">{customer?.staff_size}</span>
               </p>
-            </div
+            </div>
             <div className="flex items-center gap-4">
               <div className="text-right space-y-1">
                 <p className="text-sm text-muted-foreground">Total Amount</p>
                 <p className="text-4xl font-bold text-primary">
                   RM {quotation?.total_amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-              </div
+              </div>
               <div className="flex flex-col gap-2">
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={items.length === 0} className="flex items-center gap-2">
@@ -403,15 +403,15 @@ const QuoteEditorPage = () => {
                   <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={items.length === 0} className="flex items-center gap-2">
                     <FileDown className="h-4 w-4" /> PDF
                   </Button>
-                </div
+                </div>
                 {quotation?.status === 'Draft' && (
                   <Button onClick={handleMarkAsSent} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
                     <Send className="h-4 w-4" /> Mark as Sent
                   </Button>
                 )}
-              </div
-            </div
-          </div
+              </div>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-4 space-y-6">
@@ -432,16 +432,16 @@ const QuoteEditorPage = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div
+                  </div>
                   <div className="space-y-2">
                     <Label>Quantity</Label>
                     <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} />
-                  </div
+                  </div>
                   <Button className="w-full" onClick={handleAddItem} disabled={!selectedSku}>
                     Add to Quotation
                   </Button>
-                </div
-              </div
+                </div>
+              </div>
 
               <AIAdvisorPanel quotation={quotation} customer={customer} items={items} />
 
@@ -452,8 +452,8 @@ const QuoteEditorPage = () => {
                 <p className="text-sm text-slate-700 italic whitespace-pre-wrap">
                   {quotation?.notes || 'No specific notes provided for this inquiry.'}
                 </p>
-              </div
-            </div
+              </div>
+            </div>
 
             <div className="lg:col-span-8 space-y-4">
               <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
@@ -503,23 +503,23 @@ const QuoteEditorPage = () => {
                             ) : (
                               <Badge variant="secondary" className="font-normal">Standard</Badge>
                             )}
-                          </td
+                          </td>
                           <td className="px-4 py-2 text-right">
                             <Button variant="ghost" size="sm" onClick={() => handleRemoveItem(item.id)} className="text-destructive hover:text-destructive">
                               <Trash2 className="h-4 w-4" />
                             </Button>
-                          </td
+                          </td>
                         </tr>
                       ))
                     )}
                   </tbody>
                 </table>
-              </div
-            </div
-          </div
-        </div
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
-    </div
+    </div>
   );
 };
 

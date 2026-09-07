@@ -57,7 +57,7 @@ const AIConfigPage = () => {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      const cleanEndpoint = endpoint.trim().replace(/\\/+$/, '');
+      const cleanEndpoint = endpoint.trim().replace(/\/+$/, '');
       const res = await fetch(`${cleanEndpoint}/api/tags`, { signal: controller.signal });
       clearTimeout(timeoutId);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -91,29 +91,29 @@ const AIConfigPage = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">AI Advisor Settings</h1>
             <p className="text-muted-foreground">Configure the local Ollama endpoint used by the quotation advisor.</p>
-          </div
+          </div>
 
           <div className="rounded-xl border bg-white p-6 space-y-4">
             <div className="space-y-2">
               <Label>Ollama Endpoint URL</Label>
               <Input value={endpoint} onChange={(e) => setEndpoint(e.target.value)} placeholder="http://localhost:11434" />
               <p className="text-xs text-muted-foreground">Ollama must be running locally on this device. This is not a cloud secret and is never sent anywhere except your own configured endpoint.</p>
-            </div
+            </div>
 
             <Button variant="outline" onClick={testConnection} disabled={testStatus === 'testing'} className="gap-2">
-              {testStatus === 'testing' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wifi className="h-4 w-4" />}\
+              {testStatus === 'testing' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wifi className="h-4 w-4" />}
               Test Connection
-            </Button
+            </Button>
 
             {testStatus === 'success' && (
               <div className="flex items-center gap-2 text-sm text-green-600">
                 <CheckCircle2 className="h-4 w-4" /> Connected — {availableModels.length} model(s) available
-              </div
+              </div>
             )}
             {testStatus === 'error' && (
               <div className="flex items-center gap-2 text-sm text-destructive">
                 <XCircle className="h-4 w-4" /> Could not reach Ollama. Advisor features will show an offline state until this is resolved.
-              </div
+              </div>
             )}
 
             {availableModels.length > 0 && (
@@ -129,21 +129,21 @@ const AIConfigPage = () => {
                     <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
-              </div
+              </div>
             )}
 
             {availableModels.length === 0 && (
               <div className="space-y-2">
                 <Label>Model name (manual entry)</Label>
                 <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="e.g. qwen2.5:7b" />
-              </div
+              </div>
             )}
 
             <Button onClick={saveSettings} disabled={!model} className="w-full">Save Settings</Button>
-          </div
-        </div
+          </div>
+        </div>
       </main>
-    </div
+    </div>
   );
 };
 
