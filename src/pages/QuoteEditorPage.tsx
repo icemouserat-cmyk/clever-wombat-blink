@@ -5,13 +5,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import AppSidebar from '@/components/AppSidebar';
 import AIAdvisorPanel from '@/components/AIAdvisorPanel';
-import { Loader2, FileText, CheckCircle } from 'lucide-react';
+import { Loader2, FileText, CheckCircle, Plus } from 'lucide-react';
 import { useQuoteTimeTracking } from '@/hooks/useQuoteTimeTracking';
 import { useQuoteExport } from '@/hooks/useQuoteExport';
 import QuoteHeader from '@/components/QuoteHeader';
-import QuoteItemManager from '@/components/QuoteItemManager';
 import QuoteItemsTable from '@/components/QuoteItemsTable';
 
 const QuoteEditorPage = () => {
@@ -28,6 +31,10 @@ const QuoteEditorPage = () => {
   const [priceList, setPriceList] = useState<any[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [invoice, setInvoice] = useState<any>(null);
+  
+  const [selectedSku, setSelectedSku] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [customPrice, setCustomPrice] = useState('');
 
   useEffect(() => {
     if (quoteId) loadQuoteData();
@@ -76,15 +83,15 @@ const QuoteEditorPage = () => {
     setQuotation((prev: any) => ({ ...prev, total_amount: data.total_amount }));
   };
 
-  const handleAddItem = async (sku: string, quantity: number, customPrice?: string) => {
-    if (!user) return;
-    const itemData = priceList.find(p => p.sku === sku);
+  const handleAddItem = async () => {
+    if (!user || !selectedSku) return;
+    const itemData = priceList.find(p => p.sku === selectedSku);
     if (!itemData) return;
 
     const requiresA3 = itemData.item_group === 'Furniture - Custom';
     const markup = 0.19;
     const unitPrice = requiresA3
-      ? (parseFloat(customPrice || '0') || 0)
+      ? (parseFloat(customPrice) || 0)
       : itemData.base_cost * (1 + markup);
     const lineTotal = unitPrice * quantity;
 
@@ -94,7 +101,7 @@ const QuoteEditorPage = () => {
         .insert({
           quotation_id: quoteId,
           user_id: user.id,
-          sku: sku,
+          sku: selectedSku,
           quantity: quantity,
           unit_price: unitPrice,
           line_total: lineTotal,
@@ -108,7 +115,10 @@ const QuoteEditorPage = () => {
 
       await refreshQuotationTotal();
       setItems(prev => [...prev, newItem]);
-      toast({ title: 'Item Added', description: `Added ${sku} to quotation.` });
+      setSelectedSku('');
+      setQuantity(1);
+      setCustomPrice('');
+      toast({ title: 'Item Added', description: `Added ${selectedSku} to quotation.` });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
@@ -229,6 +239,9 @@ const QuoteEditorPage = () => {
     );
   }
 
+  const selectedItemData = priceList.find(p => p.sku === selectedSku);
+  const isCustomItem = selectedItemData?.item_group === 'Furniture - Custom';
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <AppSidebar />
@@ -247,7 +260,53 @@ const QuoteEditorPage = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-4 space-y-6">
-              <QuoteItemManager priceList={priceList} onAddItem={handleAddItem} />
+              <div className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Plus className="h-5 w-5" /> Add Line Item
+                </h2>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Select Item (SKU)</Label>
+                    <Select value={selectedSku} onValueChange={setSelectedSku}>
+                      <SelectTrigger><SelectValue placeholder="Choose a product..." /></SelectTrigger>
+                      <SelectContent>
+                        {priceList.map(p => (
+                          <SelectItem key={p.id} value={p.sku}>
+                            {p.sku} - {p.description} (RM {p.base_cost})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Quantity</Label>
+                    <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} />
+                  </div>
+                  {isCustomItem && (
+                    <div className="space-y-2">
+                      <Label>Custom Price (RM) — agreed with customer</Label>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={customPrice}
+                        onChange={(e) => setCustomPrice(e.target.value.replace(/[^0-9.]/g, ''))}
+                        placeholder="e.g. 5000"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        This item has no fixed catalogue price. Enter the price agreed
+                        with the customer for this specific quotation.
+                      </p>
+                    </div>
+                  )}
+                  <Button 
+                    className="w-full" 
+                    onClick={handleAddItem} 
+                    disabled={!selectedSku || (isCustomItem && (!customPrice || parseFloat(customPrice) <= 0))}
+                  >
+                    Add to Quotation
+                  </Button>
+                </div>
+              </div>
               <AIAdvisorPanel quotation={quotation} customer={customer} items={items} />
               
               {invoice && (
