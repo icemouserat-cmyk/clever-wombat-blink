@@ -1,0 +1,1 @@
+ALTER TABLE public.suppliers ADD CONSTRAINT suppliers_name_key UNIQUE (name);

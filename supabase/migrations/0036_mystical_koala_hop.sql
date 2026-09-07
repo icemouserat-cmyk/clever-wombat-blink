@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Owner Access" ON public.price_list;

@@ -1,0 +1,1 @@
+ALTER TABLE public.price_list ADD CONSTRAINT price_list_sku_key UNIQUE (sku);

@@ -1,0 +1,1 @@
+ALTER TABLE public.suppliers DROP CONSTRAINT IF EXISTS suppliers_user_id_name_key;

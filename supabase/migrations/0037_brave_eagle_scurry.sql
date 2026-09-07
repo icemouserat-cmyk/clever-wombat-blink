@@ -1,0 +1,1 @@
+CREATE POLICY "Shared catalogue access" ON public.price_list FOR ALL TO authenticated USING (true) WITH CHECK (true);

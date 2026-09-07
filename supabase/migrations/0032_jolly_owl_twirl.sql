@@ -1,0 +1,1 @@
+ALTER TABLE public.price_list DROP CONSTRAINT IF EXISTS price_list_user_id_sku_key;

@@ -1,0 +1,1 @@
+CREATE POLICY "Shared catalogue access" ON public.suppliers FOR ALL TO authenticated USING (true) WITH CHECK (true);
