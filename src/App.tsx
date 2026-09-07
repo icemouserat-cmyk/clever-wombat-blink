@@ -14,6 +14,7 @@ import PricingPage from "./pages/PricingPage";
 import QuotationsPage from "./pages/QuotationsPage";
 import QuoteEditorPage from "./pages/QuoteEditorPage";
 import AIConfigPage from "./pages/AIConfigPage";
+import InsightsPage from "./pages/InsightsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/settings/ai" element={<AIConfigPage />} />
               <Route path="/quotations" element={<QuotationsPage />} />
               <Route path="/quotations/:id" element={<QuoteEditorPage />} />
+              <Route path="/insights" element={<InsightsPage />} />
               {/* ADD ALL PROTECTED CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             </Route>
             <Route path="*" element={<NotFound />} />
