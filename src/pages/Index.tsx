@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import AppHeader from '@/components/AppHeader';
+import AppSidebar from '@/components/AppSidebar';
 import ImageUpload from '@/components/ImageUpload';
 import { Link } from 'react-router-dom';
 import { Users, Package, DollarSign, FileText, Loader2, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
@@ -97,10 +97,9 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AppHeader />
-
-      <div className="container mx-auto px-4 py-12">
+    <div className="flex min-h-screen bg-slate-50">
+      <AppSidebar />
+      <main className="flex-1 px-8 py-12">
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Welcome back</h2>
@@ -154,49 +153,11 @@ const Index = () => {
                   <Clock className="h-4 w-4" /> Founder Active Minutes Today
                 </div>
                 <p className="text-3xl font-bold">{kpis.founderActiveMinutesToday}</p>
-                <p className="text-xs text-muted-foreground">Not yet tracked in this build</p>
               </div>
             </div>
           )}
         </div>
-
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Link to="/inquiries" className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition-shadow space-y-3">
-              <Users className="h-8 w-8 text-primary" />
-              <div>
-                <h3 className="font-semibold">Inquiries</h3>
-                <p className="text-sm text-muted-foreground">Capture new leads</p>
-              </div>
-            </Link>
-
-            <Link to="/quotations" className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition-shadow space-y-3">
-              <FileText className="h-8 w-8 text-primary" />
-              <div>
-                <h3 className="font-semibold">Quotations</h3>
-                <p className="text-sm text-muted-foreground">Build and send quotes</p>
-              </div>
-            </Link>
-
-            <Link to="/settings/pricing" className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition-shadow space-y-3">
-              <DollarSign className="h-8 w-8 text-primary" />
-              <div>
-                <h3 className="font-semibold">Price List</h3>
-                <p className="text-sm text-muted-foreground">Manage SKUs and pricing</p>
-              </div>
-            </Link>
-
-            <Link to="/settings/suppliers" className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition-shadow space-y-3">
-              <Package className="h-8 w-8 text-primary" />
-              <div>
-                <h3 className="font-semibold">Suppliers</h3>
-                <p className="text-sm text-muted-foreground">Factory partner references</p>
-              </div>
-            </Link>
-          </div>
-        </div>
-      </div>
+      </main>
     </div>
   );
 };
