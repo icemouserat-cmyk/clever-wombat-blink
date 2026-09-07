@@ -60,9 +60,12 @@ const QuotationsPage = () => {
                       <td className="px-4 py-2"><Badge variant="outline">{q.status}</Badge></td>
                       <td className="px-4 py-2">
                         {q.invoices && q.invoices.length > 0 ? (
-                          <Badge variant="outline" className={q.invoices[0].payment_status === 'Paid' ? 'border-green-500 text-green-700' : 'border-orange-500 text-orange-700'}>
-                            {q.invoices[0].invoice_number} · {q.invoices[0].payment_status}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <span className={`h-2 w-2 rounded-full ${q.invoices[0].payment_status === 'Paid' ? 'bg-green-500' : 'bg-orange-500'}`} />
+                            <Badge variant="outline" className={q.invoices[0].payment_status === 'Paid' ? 'border-green-500 text-green-700' : 'border-orange-500 text-orange-700'}>
+                              {q.invoices[0].invoice_number} · {q.invoices[0].payment_status}
+                            </Badge>
+                          </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
