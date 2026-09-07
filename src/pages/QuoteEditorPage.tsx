@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import AppSidebar from '@/components/AppSidebar';
 import AIAdvisorPanel from '@/components/AIAdvisorPanel';
-import { Loader2, FileText, CheckCircle } from 'lucide-//react';
+import { Loader2, FileText, CheckCircle } from 'lucide-react';
 import { useQuoteTimeTracking } from '@/hooks/useQuoteTimeTracking';
 import { useQuoteExport } from '@/hooks/useQuoteExport';
 import QuoteHeader from '@/components/QuoteHeader';
@@ -131,7 +131,7 @@ const QuoteEditorPage = () => {
       const { error } = await supabase.from('quotation_items').update({ is_approved: !currentStatus }).eq('id', itemId);
       if (error) throw error;
       setItems(prev => prev.map(item => item.id === itemId ? { ...item, is_approved: !currentStatus } : item));
-      toast({ title: 'Approval Updated', description: `Item is now ${!currentSatus ? 'Approved' : 'Pending Review'}.` });
+      toast({ title: 'Approval Updated', description: `Item is now ${!currentStatus ? 'Approved' : 'Pending Review'}.` });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
