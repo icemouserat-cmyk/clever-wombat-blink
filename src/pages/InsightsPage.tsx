@@ -51,7 +51,7 @@ const InsightsPage = () => {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 25000);
-      const cleanEndpoint = settings.endpoint.trim().replace(/\\/+$/, '');
+      const cleanEndpoint = settings.endpoint.trim().replace(/\/+$/, '');
 
       const res = await fetch(`${cleanEndpoint}/api/chat`, {
         method: 'POST',
