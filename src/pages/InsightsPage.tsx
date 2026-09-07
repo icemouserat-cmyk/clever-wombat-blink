@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import AppHeader from '@/components/AppHeader';
+import AppSidebar from '@/components/AppSidebar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Sparkles, WifiOff, AlertTriangle } from 'lucide-react';
@@ -110,7 +110,7 @@ Line items pending A3 approval: ${pendingA3}
 Total value across all quotations (RM): ${totalValue.toFixed(2)}`;
 
     const { result, status } = await callOllama(systemPrompt, userContent);
-    setOverviewSummary(result);
+    setOverviewSummary(// result
     setOverviewStatus(status);
     setIsGeneratingOverview(false);
   };
@@ -179,69 +179,73 @@ Average staff size: ${avgStaffSize}`;
 
   if (isConfigLoading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <AppHeader />
-        <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+      <div className="flex min-h-screen bg-slate-50">
+        <AppSidebar />
+        <div className="flex-1 flex justify-center items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AppHeader />
-      <div className="container mx-auto py-8 px-4 max-w-4xl space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">AI Insights</h1>
-          <p className="text-muted-foreground">Grounded summaries of your business, quotations, and customers.</p>
+    <div className="flex min-h-screen bg-slate-50">
+      <AppSidebar />
+      <main className="flex-1 px-8 py-12">
+        <div className="container mx-auto max-w-4xl space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">AI Insights</h1>
+            <p className="text-muted-foreground">Grounded summaries of your business, quotations, and customers.</p>
+          </div>
+
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList>
+              <TabsTrigger value="overview">Business Overview</TabsTrigger>
+              <TabsTrigger value="quotations">Quotations</TabsTrigger>
+              <TabsTrigger value="customers">Customers</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-4">
+              <div className="rounded-xl border bg-white p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><Sparkles className="h-4 w-4 text-purple-500" /> Business Overview</h3>
+                  <Button size="sm" variant="outline" onClick={generateOverview} disabled={isGeneratingOverview}>
+                    {isGeneratingOverview ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Generate'}
+                  </Button>
+                </div>
+                {renderStatus(overviewStatus)}
+                {overviewSummary && <div className="text-sm text-slate-700 bg-slate-50 rounded-lg p-3 whitespace-pre-wrap">{overviewSummary}</div>}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="quotations" className="space-y-4">
+              <div className="rounded-xl border bg-white p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><Sparkles className="h-4 w-4 text-purple-500" /> Quotations Summary</h3>
+                  <Button size="sm" variant="outline" onClick={generateQuotationsSummary} disabled={isGeneratingQuotations}>
+                    {isGeneratingQuotations ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Generate'}
+                  </Button>
+                </div>
+                {renderStatus(quotationsStatus)}
+                {quotationsSummary && <div className="text-sm text-slate-700 bg-slate-50 rounded-lg p-3 whitespace-pre-wrap">{quotationsSummary}</div>}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="customers" className="space-y-4">
+              <div className="rounded-xl border bg-white p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><Sparkles className="h-4 w-4 text-purple-500" /> Customers Summary</h3>
+                  <Button size="sm" variant="outline" onClick={generateCustomersSummary} disabled={isGeneratingCustomers}>
+                    {isGeneratingCustomers ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Generate'}
+                  </Button>
+                </div>
+                {renderStatus(customersStatus)}
+                {customersSummary && <div className="text-sm text-slate-700 bg-slate-50 rounded-lg p-3 whitespace-pre-wrap">{customersSummary}</div>}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
-
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList>
-            <TabsTrigger value="overview">Business Overview</TabsTrigger>
-            <TabsTrigger value="quotations">Quotations</TabsTrigger>
-            <TabsTrigger value="customers">Customers</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-4">
-            <div className="rounded-xl border bg-white p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold flex items-center gap-2"><Sparkles className="h-4 w-4 text-purple-500" /> Business Overview</h3>
-                <Button size="sm" variant="outline" onClick={generateOverview} disabled={isGeneratingOverview}>
-                  {isGeneratingOverview ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Generate'}
-                </Button>
-              </div>
-              {renderStatus(overviewStatus)}
-              {overviewSummary && <div className="text-sm text-slate-700 bg-slate-50 rounded-lg p-3 whitespace-pre-wrap">{overviewSummary}</div>}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="quotations" className="space-y-4">
-            <div className="rounded-xl border bg-white p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold flex items-center gap-2"><Sparkles className="h-4 w-4 text-purple-500" /> Quotations Summary</h3>
-                <Button size="sm" variant="outline" onClick={generateQuotationsSummary} disabled={isGeneratingQuotations}>
-                  {isGeneratingQuotations ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Generate'}
-                </Button>
-              </div>
-              {renderStatus(quotationsStatus)}
-              {quotationsSummary && <div className="text-sm text-slate-700 bg-slate-50 rounded-lg p-3 whitespace-pre-wrap">{quotationsSummary}</div>}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="customers" className="space-y-4">
-            <div className="rounded-xl border bg-white p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold flex items-center gap-2"><Sparkles className="h-4 w-4 text-purple-500" /> Customers Summary</h3>
-                <Button size="sm" variant="outline" onClick={generateCustomersSummary} disabled={isGeneratingCustomers}>
-                  {isGeneratingCustomers ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Generate'}
-                </Button>
-              </div>
-              {renderStatus(customersStatus)}
-              {customersSummary && <div className="text-sm text-slate-700 bg-slate-50 rounded-lg p-3 whitespace-pre-wrap">{customersSummary}</div>}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+      </main>
     </div>
   );
 };
