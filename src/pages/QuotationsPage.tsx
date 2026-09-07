@@ -17,7 +17,7 @@ const QuotationsPage = () => {
       setIsLoading(true);
       const { data: quotes, error } = await supabase
         .from('quotations')
-        .select('*, customers(name)')
+        .select('*, customers(name), invoices(invoice_number, payment_status, due_date)')
         .order('created_at', { ascending: false });
       if (!error) setQuotations(quotes || []);
       setIsLoading(false);
@@ -47,6 +47,7 @@ const QuotationsPage = () => {
                   <tr>
                     <th className="text-left font-medium px-4 py-3">Customer</th>
                     <th className="text-left font-medium px-4 py-3">Status</th>
+                    <th className="text-left font-medium px-4 py-3">Invoice</th>
                     <th className="text-left font-medium px-4 py-3">Total</th>
                     <th className="text-left font-medium px-4 py-3">Date</th>
                     <th className="text-right font-medium px-4 py-3">Action</th>
@@ -57,6 +58,15 @@ const QuotationsPage = () => {
                     <tr key={q.id} className="border-b last:border-b-0">
                       <td className="px-4 py-2 font-medium">{q.customers?.name || 'Unknown'}</td>
                       <td className="px-4 py-2"><Badge variant="outline">{q.status}</Badge></td>
+                      <td className="px-4 py-2">
+                        {q.invoices && q.invoices.length > 0 ? (
+                          <Badge variant="outline" className={q.invoices[0].payment_status === 'Paid' ? 'border-green-500 text-green-700' : 'border-orange-500 text-orange-700'}>
+                            {q.invoices[0].invoice_number} · {q.invoices[0].payment_status}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-2">RM {Number(q.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                       <td className="px-4 py-2 text-muted-foreground">{format(new Date(q.created_at), 'MMM d, yyyy')}</td>
                       <td className="px-4 py-2 text-right">
