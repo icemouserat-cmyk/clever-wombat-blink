@@ -387,6 +387,11 @@ const QuoteEditorPage = () => {
                 Customer: <span className="font-medium text-foreground">{customer?.name}</span> |
                 Staff Size: <span className="font-medium text-foreground">{customer?.staff_size}</span>
               </p>
+              {customer?.address && (
+                <span className="block text-sm mt-1">
+                  Address: <span className="font-medium text-foreground">{customer.address}</span>
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right space-y-1">
