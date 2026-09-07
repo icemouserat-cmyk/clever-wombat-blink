@@ -35,6 +35,7 @@ const QuoteEditorPage = () => {
   const [selectedSku, setSelectedSku] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [customPrice, setCustomPrice] = useState('');
+  const [customDescription, setCustomDescription] = useState('');
 
   useEffect(() => {
     if (quoteId) loadQuoteData();
@@ -107,6 +108,7 @@ const QuoteEditorPage = () => {
           line_total: lineTotal,
           requires_a3_approval: requiresA3,
           is_approved: !requiresA3,
+          description: requiresA3 ? customDescription : itemData.description,
         })
         .select()
         .single();
@@ -118,6 +120,7 @@ const QuoteEditorPage = () => {
       setSelectedSku('');
       setQuantity(1);
       setCustomPrice('');
+      setCustomDescription('');
       toast({ title: 'Item Added', description: `Added ${selectedSku} to quotation.` });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -283,20 +286,30 @@ const QuoteEditorPage = () => {
                     <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} />
                   </div>
                   {isCustomItem && (
-                    <div className="space-y-2">
-                      <Label>Custom Price (RM) — agreed with customer</Label>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        value={customPrice}
-                        onChange={(e) => setCustomPrice(e.target.value.replace(/[^0-9.]/g, ''))}
-                        placeholder="e.g. 5000"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        This item has no fixed catalogue price. Enter the price agreed
-                        with the customer for this specific quotation.
-                      </p>
-                    </div>
+                    <>
+                      <div className="space-y-2">
+                        <Label>Custom Description</Label>
+                        <Input 
+                          value={customDescription} 
+                          onChange={(e) => setCustomDescription(e.target.value)} 
+                          placeholder="e.g. Custom ergonomic chair with leather finish"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Custom Price (RM) — agreed with customer</Label>
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          value={customPrice}
+                          onChange={(e) => setCustomPrice(e.target.value.replace(/[^0-9.]/g, ''))}
+                          placeholder="e.g. 5000"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          This item has no fixed catalogue price. Enter the price agreed
+                          with the customer for this specific quotation.
+                        </p>
+                      </div>
+                    </>
                   )}
                   <Button 
                     className="w-full" 
