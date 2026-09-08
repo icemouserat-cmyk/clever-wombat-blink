@@ -14,6 +14,7 @@ import PricingPage from "./pages/PricingPage";
 import QuotationsPage from "./pages/QuotationsPage";
 import QuoteEditorPage from "./pages/QuoteEditorPage";
 import AIConfigPage from "./pages/AIConfigPage";
+import ERPConfigPage from "./pages/ERPConfigPage";
 import InsightsPage from "./pages/InsightsPage";
 import NotFound from "./pages/NotFound";
 
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/settings/suppliers" element={<SuppliersPage />} />
               <Route path="/settings/pricing" element={<PricingPage />} />
               <Route path="/settings/ai" element={<AIConfigPage />} />
+              <Route path="/settings/erp" element={<ERPConfigPage />} />
               <Route path="/quotations" element={<QuotationsPage />} />
               <Route path="/quotations/:id" element={<QuoteEditorPage />} />
               <Route path="/insights" element={<InsightsPage />} />
