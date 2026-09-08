@@ -1,0 +1,1 @@
+ALTER TABLE public.app_config ENABLE ROW LEVEL SECURITY;

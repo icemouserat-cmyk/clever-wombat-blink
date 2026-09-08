@@ -1,0 +1,1 @@
+CREATE POLICY "Users can only access their own config keys" ON public.app_config FOR ALL TO authenticated USING (key LIKE '%' || auth.uid()::text) WITH CHECK (key LIKE '%' || auth.uid()::text);
