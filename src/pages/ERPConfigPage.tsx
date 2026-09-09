@@ -8,9 +8,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle2, XCircle, Wifi, Eye, EyeOff, LogIn } from 'lucide-react';
 
-type AuthMode = 'token' | 'session';
+export type AuthMode = 'token' | 'session';
 
-interface ErpSettings {
+export interface ErpSettings {
   erpUrl: string;
   authMode: AuthMode;
   apiKey: string;

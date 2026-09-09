@@ -108,10 +108,20 @@ const PricingPage = () => {
                       onUploaded={(url) => handleImageUploaded(item.id, url)}
                       onRemoved={() => handleImageRemoved(item.id)}
                     />
-                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 w-full">
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 w-full">
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">SKU</p>
                         <p className="font-mono font-medium text-sm">{item.sku}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">ERPNext Item Code</p>
+                        <Input
+                          className="h-8 w-full font-mono"
+                          placeholder="e.g. FURN-STD-001"
+                          value={edit.erpnext_item_code ?? item.erpnext_item_code ?? ''}
+                          onChange={(e) => updateLocal(item.id, { erpnext_item_code: e.target.value })}
+                          onBlur={() => handleSave(item.id)}
+                        />
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Description</p>

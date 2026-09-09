@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
-  LogOut, Home, Users, FileText, DollarSign, Package, Settings, Sparkles, Plug,
+  LogOut, Home, Users, FileText, DollarSign, Package, Settings, Sparkles, Plug, ClipboardCheck, ShieldAlert, TrendingUp,
 } from 'lucide-react';
 
 type AiStatus = 'checking' | 'online' | 'offline';
@@ -13,11 +13,14 @@ const navItems = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/inquiries', label: 'Inquiries', icon: Users },
   { to: '/quotations', label: 'Quotations', icon: FileText },
+  { to: '/progress', label: 'Progress', icon: TrendingUp },
+  { to: '/approvals', label: 'Approvals', icon: ClipboardCheck },
   { to: '/settings/pricing', label: 'Price List', icon: DollarSign },
   { to: '/settings/suppliers', label: 'Suppliers', icon: Package },
   { to: '/insights', label: 'AI Insights', icon: Sparkles },
   { to: '/settings/ai', label: 'AI Settings', icon: Settings },
   { to: '/settings/erp', label: 'ERP Connection', icon: Plug },
+  { to: '/settings/compliance', label: 'Compliance', icon: ShieldAlert },
 ];
 
 const AppSidebar = () => {

@@ -30,3 +30,12 @@ dist-ssr
 .last-run.json
 .dyad/
 .claude/
+
+# Local secrets — never commit
+.env
+.env.*
+!.env.example
+.gmail-credentials.json
+
+# Supabase CLI local state
+supabase/.temp/

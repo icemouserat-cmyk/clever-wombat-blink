@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { getQuotationStatusLabel } from '@/lib/statusLabels';
 
 const QuotationsPage = () => {
   const [quotations, setQuotations] = useState<any[]>([]);
@@ -57,7 +58,16 @@ const QuotationsPage = () => {
                   {quotations.map((q) => (
                     <tr key={q.id} className="border-b last:border-b-0">
                       <td className="px-4 py-2 font-medium">{q.customers?.name || 'Unknown'}</td>
-                      <td className="px-4 py-2"><Badge variant="outline">{q.status}</Badge></td>
+                      <td className="px-4 py-2">
+                        <div className="flex flex-col gap-1 items-start">
+                          <Badge variant="outline">{getQuotationStatusLabel(q.status)}</Badge>
+                          {q.workflow_state && (
+                            <Badge variant="outline" className="border-blue-500 text-blue-700 text-[10px]">
+                              {q.workflow_state}
+                            </Badge>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-2">
                         {q.invoices && q.invoices.length > 0 ? (
                           <div className="flex items-center gap-2">

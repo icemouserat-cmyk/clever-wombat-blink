@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -10,19 +10,38 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
-const InquiryForm = () => {
+interface InquiryFormProps {
+  prefillName?: string;
+  prefillEmail?: string;
+  prefillStaffSize?: number;
+  sourceInquiryId?: string;
+}
+
+const InquiryForm = ({ prefillName, prefillEmail, prefillStaffSize, sourceInquiryId }: InquiryFormProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '',
+    name: prefillName || '',
+    email: prefillEmail || '',
     referralSource: '',
-    staffSize: '',
+    staffSize: prefillStaffSize ? String(prefillStaffSize) : '',
     address: '',
     notes: '',
   });
+
+  useEffect(() => {
+    if (prefillName || prefillEmail || prefillStaffSize) {
+      setFormData((prev) => ({
+        ...prev,
+        name: prefillName || prev.name,
+        email: prefillEmail || prev.email,
+        staffSize: prefillStaffSize ? String(prefillStaffSize) : prev.staffSize,
+      }));
+    }
+  }, [prefillName, prefillEmail, prefillStaffSize]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +60,7 @@ const InquiryForm = () => {
         .insert({
           user_id: user.id,
           name: formData.name,
+          email: formData.email,
           referral_source: formData.referralSource,
           staff_size: size,
           address: formData.address,
@@ -50,19 +70,28 @@ const InquiryForm = () => {
 
       if (customerError) throw customerError;
 
-      const { error: quoteError } = await supabase
+      const { data: quotation, error: quoteError } = await supabase
         .from('quotations')
         .insert({
           user_id: user.id,
           customer_id: customer.id,
           status: 'Draft',
           notes: formData.notes,
-        });
+        })
+        .select()
+        .single();
 
       if (quoteError) throw quoteError;
 
+      if (sourceInquiryId) {
+        await supabase
+          .from('inquiries')
+          .update({ status: 'converted', converted_customer_id: customer.id, converted_quotation_id: quotation.id })
+          .eq('id', sourceInquiryId);
+      }
+
       toast({ title: 'Inquiry Captured', description: 'Customer and draft quotation created.' });
-      setFormData({ name: '', referralSource: '', staffSize: '', address: '', notes: '' });
+      setFormData({ name: '', email: '', referralSource: '', staffSize: '', address: '', notes: '' });
       navigate('/quotations');
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -77,6 +106,10 @@ const InquiryForm = () => {
         <div className="space-y-2">
           <Label htmlFor="name">Customer Name</Label>
           <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">Customer Email</Label>
+          <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
         </div>
         <div className="space-y-2">
           <Label htmlFor="referral">Referral Source</Label>

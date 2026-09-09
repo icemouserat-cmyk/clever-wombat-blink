@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Plus, Database } from 'lucide-react';
+import { Loader2, Trash2, Plus, Database, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const SuppliersPage = () => {
   const { user } = useAuth();
@@ -14,6 +15,7 @@ const SuppliersPage = () => {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => { fetchSuppliers(); }, []);
 
@@ -83,10 +85,24 @@ const SuppliersPage = () => {
                   </thead>
                   <tbody>
                     {suppliers.map(s => (
-                      <tr key={s.id} className="border-b last:border-b-0">
+                      <tr
+                        key={s.id}
+                        className="border-b last:border-b-0 cursor-pointer hover:bg-slate-50"
+                        onClick={() => navigate(`/settings/suppliers/${s.id}`)}
+                      >
                         <td className="px-4 py-2">{s.name}</td>
                         <td className="px-4 py-2 text-right">
-                          <Button variant="ghost" size="sm" onClick={() => deleteSupplier(s.id)} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" className="gap-1">
+                            Order <ArrowRight className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => { e.stopPropagation(); deleteSupplier(s.id); }}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </td>
                       </tr>
                     ))}

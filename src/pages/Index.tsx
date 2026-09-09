@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import AppSidebar from '@/components/AppSidebar';
 import ImageUpload from '@/components/ImageUpload';
 import { Link } from 'react-router-dom';
-import { Users, Package, DollarSign, FileText, Loader2, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
+import { Users, Package, DollarSign, FileText, Loader2, TrendingUp, Clock, CheckCircle2, ClipboardCheck } from 'lucide-react';
 
 const Index = () => {
   const { user } = useAuth();
@@ -15,6 +15,7 @@ const Index = () => {
     conversionRate: 0,
     avgTurnaroundMinutes: 0,
     founderActiveMinutesToday: 0,
+    pendingApprovals: 0,
   });
 
   useEffect(() => {
@@ -85,11 +86,17 @@ const Index = () => {
         (sum, log) => sum + (log.duration_minutes || 0), 0
       );
 
+      const { count: pendingApprovals } = await supabase
+        .from('workflow_actions')
+        .select('*', { count: 'exact', head: true })
+        .is('decided_at', null);
+
       setKpis({
         quotesSentThisWeek: sentThisWeek,
         conversionRate,
         avgTurnaroundMinutes,
         founderActiveMinutesToday,
+        pendingApprovals: pendingApprovals || 0,
       });
     } finally {
       setIsLoading(false);
@@ -154,6 +161,13 @@ const Index = () => {
                 </div>
                 <p className="text-3xl font-bold">{kpis.founderActiveMinutesToday}</p>
               </div>
+
+              <Link to="/approvals" className="rounded-xl border bg-white p-6 space-y-2 hover:border-primary transition-colors">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <ClipboardCheck className="h-4 w-4" /> Pending Founder Approvals
+                </div>
+                <p className="text-3xl font-bold">{kpis.pendingApprovals}</p>
+              </Link>
             </div>
           )}
         </div>

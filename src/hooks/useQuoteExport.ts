@@ -157,5 +157,106 @@ export const useQuoteExport = () => {
     toast({ title: 'Exported', description: 'Quotation PDF downloaded.' });
   };
 
-  return { exportCsv, exportPdf };
+  // Generated automatically the moment the balance invoice is marked Paid — this is
+  // the formal, downloadable proof that an order is fully settled (deposit + balance),
+  // distinct from the working quotation PDF above.
+  const exportFinalInvoicePdf = async (
+    quotation: any,
+    customer: any,
+    items: any[],
+    logoUrl: string | null,
+    depositInvoice: { invoice_number: string; total_amount: number } | undefined,
+    balanceInvoice: { invoice_number: string; total_amount: number } | undefined
+  ) => {
+    if (!quotation || !customer) return;
+
+    const doc = new jsPDF();
+    let cursorY = 15;
+
+    if (logoUrl) {
+      const dataUrl = await loadImageAsDataUrl(logoUrl);
+      if (dataUrl) {
+        try {
+          doc.addImage(dataUrl, 'PNG', 14, cursorY, 30, 30);
+          cursorY += 5;
+        } catch {
+          // If image embedding fails, continue without it rather than blocking export
+        }
+      }
+    }
+
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('AuraSpace Sdn Bhd', logoUrl ? 50 : 14, cursorY + 8);
+    doc.setFontSize(12);
+    doc.setTextColor(16, 128, 64);
+    doc.text('FINAL INVOICE — PAID IN FULL', logoUrl ? 50 : 14, cursorY + 15);
+    doc.setTextColor(0, 0, 0);
+
+    cursorY += 35;
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Order ID: ${quotation.id.slice(0, 8)}`, 14, cursorY);
+    doc.text(`Customer: ${customer.name}`, 140, cursorY);
+    cursorY += 6;
+    if (quotation.expected_completion_date) {
+      doc.text(`Completion Date: ${quotation.expected_completion_date}`, 14, cursorY);
+    }
+    if (customer.email) {
+      doc.text(`Email: ${customer.email}`, 140, cursorY);
+    }
+    cursorY += 12;
+
+    (doc as any).autoTable({
+      startY: cursorY,
+      head: [['SKU', 'Qty', 'Unit Price (RM)', 'Line Total (RM)', 'Group']],
+      body: items.map((item) => [
+        item.sku,
+        String(item.quantity),
+        item.unit_price.toFixed(2),
+        item.line_total.toFixed(2),
+        item.requires_a3_approval ? 'Custom' : 'Standard',
+      ]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [79, 70, 229] },
+    });
+
+    let finalY = (doc as any).lastAutoTable.finalY || cursorY + 20;
+    finalY += 10;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    if (depositInvoice) {
+      doc.text(
+        `Deposit (${depositInvoice.invoice_number}): RM ${Number(depositInvoice.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })} — Paid`,
+        14,
+        finalY
+      );
+      finalY += 6;
+    }
+    if (balanceInvoice) {
+      doc.text(
+        `Balance (${balanceInvoice.invoice_number}): RM ${Number(balanceInvoice.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })} — Paid`,
+        14,
+        finalY
+      );
+      finalY += 6;
+    }
+
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total Paid: RM ${Number(quotation.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 14, finalY + 6);
+
+    const safeCustomerName = (customer.name || 'order').replace(/[^a-z0-9]/gi, '_');
+    doc.save(`AuraSpace_FinalInvoice_${safeCustomerName}_${quotation.id.slice(0, 8)}.pdf`);
+
+    toast({ title: 'Final Invoice Generated', description: 'Order is fully paid — final invoice PDF downloaded.' });
+
+    // Returned so the caller can also email this exact PDF to the customer
+    // (see gmail-send-final-invoice) — the download above already happened either way.
+    return doc.output('datauristring') as string;
+  };
+
+  return { exportCsv, exportPdf, exportFinalInvoicePdf };
 };

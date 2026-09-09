@@ -10,11 +10,15 @@ import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
 import InquiryPage from "./pages/InquiryPage";
 import SuppliersPage from "./pages/SuppliersPage";
+import SupplierDetailPage from "./pages/SupplierDetailPage";
 import PricingPage from "./pages/PricingPage";
 import QuotationsPage from "./pages/QuotationsPage";
 import QuoteEditorPage from "./pages/QuoteEditorPage";
 import AIConfigPage from "./pages/AIConfigPage";
 import ERPConfigPage from "./pages/ERPConfigPage";
+import ApprovalsPage from "./pages/ApprovalsPage";
+import ProgressPage from "./pages/ProgressPage";
+import CompliancePage from "./pages/CompliancePage";
 import InsightsPage from "./pages/InsightsPage";
 import NotFound from "./pages/NotFound";
 
@@ -34,11 +38,15 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/inquiries" element={<InquiryPage />} />
               <Route path="/settings/suppliers" element={<SuppliersPage />} />
+              <Route path="/settings/suppliers/:id" element={<SupplierDetailPage />} />
               <Route path="/settings/pricing" element={<PricingPage />} />
               <Route path="/settings/ai" element={<AIConfigPage />} />
               <Route path="/settings/erp" element={<ERPConfigPage />} />
+              <Route path="/approvals" element={<ApprovalsPage />} />
+              <Route path="/settings/compliance" element={<CompliancePage />} />
               <Route path="/quotations" element={<QuotationsPage />} />
               <Route path="/quotations/:id" element={<QuoteEditorPage />} />
+              <Route path="/progress" element={<ProgressPage />} />
               <Route path="/insights" element={<InsightsPage />} />
               {/* ADD ALL PROTECTED CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             </Route>
