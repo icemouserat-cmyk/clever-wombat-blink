@@ -10,7 +10,12 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Plus, Trash2, Package } from 'lucide-react';
-import { loadErpSettings, createErpPurchaseOrder } from '@/services/erpnextClient';
+import {
+  loadErpSettings,
+  createErpPurchaseOrder,
+  createErpPurchaseReceiptFromPurchaseOrder,
+  createErpPurchaseInvoiceFromPurchaseReceipt,
+} from '@/services/erpnextClient';
 
 interface DraftLine {
   sku: string;
@@ -144,17 +149,46 @@ const SupplierDetailPage = () => {
     }
   };
 
-  const markAsReceived = async (poId: string) => {
+  const markAsReceived = async (po: any) => {
     try {
       const { error } = await supabase
         .from('purchase_orders')
         .update({ status: 'Received', received_at: new Date().toISOString() })
-        .eq('id', poId);
+        .eq('id', po.id);
       if (error) throw error;
       await loadData();
       toast({ title: 'Marked as Received' });
+
+      // Best-effort ERPNext sync — the Supabase status above is already committed
+      // regardless of whether this succeeds. Sequenced like the customer side: the
+      // Purchase Invoice is created FROM the Purchase Receipt (not the Purchase Order
+      // directly), so goods must be confirmed received in ERPNext before the bill exists.
+      syncErpPurchaseReceiptAndInvoice(po);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+
+  const syncErpPurchaseReceiptAndInvoice = async (po: any) => {
+    if (!user || !po.erpnext_po_id) return;
+    try {
+      const settings = await loadErpSettings(user.id);
+      if (!settings?.erpUrl) return;
+
+      const erpReceiptId = await createErpPurchaseReceiptFromPurchaseOrder(settings, po.erpnext_po_id);
+      await supabase.from('purchase_orders').update({ erpnext_purchase_receipt_id: erpReceiptId }).eq('id', po.id);
+
+      const erpInvoiceId = await createErpPurchaseInvoiceFromPurchaseReceipt(settings, erpReceiptId);
+      await supabase.from('purchase_orders').update({ erpnext_purchase_invoice_id: erpInvoiceId }).eq('id', po.id);
+
+      await loadData();
+      toast({ title: 'Synced to ERPNext', description: `Purchase Receipt ${erpReceiptId} and Purchase Invoice ${erpInvoiceId} created in ERPNext.` });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'ERPNext Sync Failed',
+        description: error instanceof Error ? error.message : 'Unknown error connecting to ERPNext.',
+      });
     }
   };
 
@@ -265,7 +299,13 @@ const SupplierDetailPage = () => {
                         <td className="px-4 py-2 font-medium">
                           {po.po_number}
                           {po.erpnext_po_id && (
-                            <span className="block text-xs font-normal text-muted-foreground font-mono">ERP: {po.erpnext_po_id}</span>
+                            <span className="block text-xs font-normal text-muted-foreground font-mono">PO: {po.erpnext_po_id}</span>
+                          )}
+                          {po.erpnext_purchase_receipt_id && (
+                            <span className="block text-xs font-normal text-muted-foreground font-mono">Receipt: {po.erpnext_purchase_receipt_id}</span>
+                          )}
+                          {po.erpnext_purchase_invoice_id && (
+                            <span className="block text-xs font-normal text-muted-foreground font-mono">Invoice: {po.erpnext_purchase_invoice_id}</span>
                           )}
                         </td>
                         <td className="px-4 py-2 text-muted-foreground">
@@ -279,7 +319,7 @@ const SupplierDetailPage = () => {
                         </td>
                         <td className="px-4 py-2 text-right">
                           {po.status === 'Pending' && (
-                            <Button variant="outline" size="sm" onClick={() => markAsReceived(po.id)}>
+                            <Button variant="outline" size="sm" onClick={() => markAsReceived(po)}>
                               Mark as Received
                             </Button>
                           )}

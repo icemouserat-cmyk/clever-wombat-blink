@@ -128,6 +128,40 @@ export async function createErpPurchaseOrder(
   return created.data.name;
 }
 
+// Converts an existing ERPNext Purchase Order into a Purchase Receipt using ERPNext's
+// own make_purchase_receipt mapper. Draft (docstatus 0) — never auto-submitted.
+// Mirrors createErpDeliveryNoteFromSalesOrder on the buying side.
+export async function createErpPurchaseReceiptFromPurchaseOrder(settings: ErpSettings, purchaseOrderErpId: string): Promise<string> {
+  const mapped = await erpRequest(
+    settings,
+    `/api/method/erpnext.buying.doctype.purchase_order.purchase_order.make_purchase_receipt?source_name=${encodeURIComponent(purchaseOrderErpId)}`
+  );
+  const created = await erpRequest(settings, '/api/resource/Purchase Receipt', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(mapped.message),
+  });
+  return created.data.name;
+}
+
+// Converts an existing ERPNext Purchase Receipt into a Purchase Invoice using
+// ERPNext's own make_purchase_invoice mapper. Draft (docstatus 0) — never
+// auto-submitted. Invoiced from the Purchase Receipt rather than the Purchase Order
+// directly, so goods must be confirmed received in ERPNext before the bill exists
+// there — mirrors createErpSalesInvoiceFromDeliveryNote on the selling side.
+export async function createErpPurchaseInvoiceFromPurchaseReceipt(settings: ErpSettings, purchaseReceiptErpId: string): Promise<string> {
+  const mapped = await erpRequest(
+    settings,
+    `/api/method/erpnext.stock.doctype.purchase_receipt.purchase_receipt.make_purchase_invoice?source_name=${encodeURIComponent(purchaseReceiptErpId)}`
+  );
+  const created = await erpRequest(settings, '/api/resource/Purchase Invoice', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(mapped.message),
+  });
+  return created.data.name;
+}
+
 export interface ErpQuotationLine {
   sku: string;
   description: string | null;
@@ -174,6 +208,40 @@ export async function createErpSalesOrderFromQuotation(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(doc),
+  });
+  return created.data.name;
+}
+
+// Converts an existing ERPNext Sales Order into a Delivery Note using ERPNext's own
+// make_delivery_note mapper. Draft (docstatus 0) — never auto-submitted. Called on
+// founder QC approval (W-03), after the Sales Order created in W-02.
+export async function createErpDeliveryNoteFromSalesOrder(settings: ErpSettings, salesOrderErpId: string): Promise<string> {
+  const mapped = await erpRequest(
+    settings,
+    `/api/method/erpnext.selling.doctype.sales_order.sales_order.make_delivery_note?source_name=${encodeURIComponent(salesOrderErpId)}`
+  );
+  const created = await erpRequest(settings, '/api/resource/Delivery Note', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(mapped.message),
+  });
+  return created.data.name;
+}
+
+// Converts an existing ERPNext Delivery Note into a Sales Invoice using ERPNext's own
+// make_sales_invoice mapper. Draft (docstatus 0) — never auto-submitted. Deliberately
+// invoiced from the Delivery Note rather than the Sales Order directly, so the
+// Delivery Note must exist first — matching the founder's sequencing requirement
+// (delivery confirmed before the balance invoice is raised).
+export async function createErpSalesInvoiceFromDeliveryNote(settings: ErpSettings, deliveryNoteErpId: string): Promise<string> {
+  const mapped = await erpRequest(
+    settings,
+    `/api/method/erpnext.stock.doctype.delivery_note.delivery_note.make_sales_invoice?source_name=${encodeURIComponent(deliveryNoteErpId)}`
+  );
+  const created = await erpRequest(settings, '/api/resource/Sales Invoice', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(mapped.message),
   });
   return created.data.name;
 }

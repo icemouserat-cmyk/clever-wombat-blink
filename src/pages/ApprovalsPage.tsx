@@ -6,7 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { resolvePendingAction } from '@/services/workflowEngine';
-import { loadErpSettings, createErpSalesOrderFromQuotation } from '@/services/erpnextClient';
+import {
+  loadErpSettings,
+  createErpSalesOrderFromQuotation,
+  createErpDeliveryNoteFromSalesOrder,
+  createErpSalesInvoiceFromDeliveryNote,
+} from '@/services/erpnextClient';
 import { Loader2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -29,6 +34,7 @@ interface WorkflowActionRow {
     total_amount: number;
     deposit_amount: number | null;
     erpnext_quotation_id: string | null;
+    erpnext_sales_order_id: string | null;
     expected_completion_date: string | null;
     customers?: { name: string } | null;
   } | null;
@@ -93,7 +99,7 @@ const ApprovalsPage = () => {
     setIsLoading(true);
     const { data } = await supabase
       .from('workflow_actions')
-      .select('*, quotations(id, total_amount, deposit_amount, erpnext_quotation_id, expected_completion_date, customers(name))')
+      .select('*, quotations(id, total_amount, deposit_amount, erpnext_quotation_id, erpnext_sales_order_id, expected_completion_date, customers(name))')
       .is('decided_at', null)
       .order('entered_pending_at', { ascending: true });
     setActions(data || []);
@@ -126,6 +132,39 @@ const ApprovalsPage = () => {
     }
   };
 
+  // Best-effort ERPNext sync (W-03) — runs after QC approval is already committed
+  // above (Supabase delivery_notes/invoices rows, production_status), so a failure
+  // here never reverts it. Sequenced per the founder's requirement: the Sales
+  // Invoice is created FROM the Delivery Note (not from the Sales Order directly),
+  // so delivery must be confirmed in ERPNext before the balance invoice exists there.
+  // Skipped (silently) if ERPNext isn't configured or W-02 never produced a
+  // erpnext_sales_order_id to convert from.
+  const syncErpDeliveryAndInvoice = async (row: WorkflowActionRow, deliveryNoteId: string | null, balanceInvoiceId: string | null) => {
+    if (!user || !row.quotations?.erpnext_sales_order_id) return;
+    try {
+      const settings = await loadErpSettings(user.id);
+      if (!settings?.erpUrl) return;
+
+      const erpDeliveryNoteId = await createErpDeliveryNoteFromSalesOrder(settings, row.quotations.erpnext_sales_order_id);
+      if (deliveryNoteId) {
+        await supabase.from('delivery_notes').update({ erpnext_delivery_note_id: erpDeliveryNoteId }).eq('id', deliveryNoteId);
+      }
+
+      const erpInvoiceId = await createErpSalesInvoiceFromDeliveryNote(settings, erpDeliveryNoteId);
+      if (balanceInvoiceId) {
+        await supabase.from('invoices').update({ erpnext_invoice_id: erpInvoiceId }).eq('id', balanceInvoiceId);
+      }
+
+      toast({ title: 'Synced to ERPNext', description: `Delivery Note ${erpDeliveryNoteId} and Sales Invoice ${erpInvoiceId} created in ERPNext.` });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'ERPNext Sync Failed',
+        description: error instanceof Error ? error.message : 'Unknown error connecting to ERPNext.',
+      });
+    }
+  };
+
   const handleDecision = async (row: WorkflowActionRow, decision: 'approved' | 'rejected') => {
     if (!user) return;
     setResolvingId(row.id);
@@ -137,30 +176,42 @@ const ApprovalsPage = () => {
         await supabase.from('quotations').update(quotationUpdates).eq('id', row.quotation_id);
       }
 
+      let newDeliveryNoteId: string | null = null;
       if (generateDeliveryNote) {
-        const { error: dnError } = await supabase.from('delivery_notes').insert({
-          user_id: user.id,
-          quotation_id: row.quotation_id,
-          delivery_note_number: `DN-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
-        });
+        const { data: newDeliveryNote, error: dnError } = await supabase
+          .from('delivery_notes')
+          .insert({
+            user_id: user.id,
+            quotation_id: row.quotation_id,
+            delivery_note_number: `DN-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
+          })
+          .select()
+          .single();
         if (dnError) throw dnError;
+        newDeliveryNoteId = newDeliveryNote.id;
       }
 
+      let newBalanceInvoiceId: string | null = null;
       if (generateBalanceInvoice && row.quotations) {
         const balance = Number(row.quotations.total_amount || 0) - Number(row.quotations.deposit_amount || 0);
         const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + 14);
-        const { error: invError } = await supabase.from('invoices').insert({
-          user_id: user.id,
-          quotation_id: row.quotation_id,
-          invoice_number: `BAL-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
-          due_date: dueDate.toISOString(),
-          payment_status: 'Unpaid',
-          paid_amount: 0,
-          total_amount: balance,
-          invoice_type: 'balance',
-        });
+        const { data: newBalanceInvoice, error: invError } = await supabase
+          .from('invoices')
+          .insert({
+            user_id: user.id,
+            quotation_id: row.quotation_id,
+            invoice_number: `BAL-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
+            due_date: dueDate.toISOString(),
+            payment_status: 'Unpaid',
+            paid_amount: 0,
+            total_amount: balance,
+            invoice_type: 'balance',
+          })
+          .select()
+          .single();
         if (invError) throw invError;
+        newBalanceInvoiceId = newBalanceInvoice.id;
       }
 
       toast({ title: decision === 'approved' ? 'Approved' : 'Rejected', description: `${STAGE_LABELS[row.stage] || row.stage} action resolved.` });
@@ -168,6 +219,10 @@ const ApprovalsPage = () => {
 
       if (row.stage === 'W02_DEPOSIT_TO_PRODUCTION' && row.action_type === 'deposit_confirmation' && decision === 'approved') {
         await syncErpSalesOrder(row);
+      }
+
+      if (row.stage === 'W03_PRODUCTION_TO_DELIVERY' && row.action_type === 'qc_approval' && decision === 'approved') {
+        await syncErpDeliveryAndInvoice(row, newDeliveryNoteId, newBalanceInvoiceId);
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: error instanceof Error ? error.message : 'Unknown error' });
