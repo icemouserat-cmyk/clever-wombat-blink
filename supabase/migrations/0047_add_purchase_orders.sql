@@ -1,4 +1,4 @@
-CREATE TABLE public.purchase_orders (
+CREATE TABLE IF NOT EXISTS public.purchase_orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES public.profiles(id) NOT NULL,
   supplier_id UUID REFERENCES public.suppliers(id) ON DELETE CASCADE NOT NULL,
@@ -10,10 +10,11 @@ CREATE TABLE public.purchase_orders (
   UNIQUE(user_id, po_number)
 );
 ALTER TABLE public.purchase_orders ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Purchase orders: owner access" ON public.purchase_orders;
 CREATE POLICY "Purchase orders: owner access" ON public.purchase_orders
   FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
-CREATE TABLE public.purchase_order_items (
+CREATE TABLE IF NOT EXISTS public.purchase_order_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   purchase_order_id UUID REFERENCES public.purchase_orders(id) ON DELETE CASCADE NOT NULL,
   sku TEXT NOT NULL,
@@ -23,6 +24,7 @@ CREATE TABLE public.purchase_order_items (
   line_total NUMERIC(12, 2) NOT NULL
 );
 ALTER TABLE public.purchase_order_items ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Purchase order items: owner access via parent" ON public.purchase_order_items;
 CREATE POLICY "Purchase order items: owner access via parent" ON public.purchase_order_items
   FOR ALL USING (EXISTS (SELECT 1 FROM public.purchase_orders po WHERE po.id = purchase_order_id AND po.user_id = auth.uid()))
   WITH CHECK (EXISTS (SELECT 1 FROM public.purchase_orders po WHERE po.id = purchase_order_id AND po.user_id = auth.uid()));

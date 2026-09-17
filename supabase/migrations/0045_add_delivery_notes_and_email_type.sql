@@ -1,4 +1,4 @@
-CREATE TABLE public.delivery_notes (
+CREATE TABLE IF NOT EXISTS public.delivery_notes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES public.profiles(id) NOT NULL,
   quotation_id UUID REFERENCES public.quotations(id) ON DELETE CASCADE,
@@ -8,6 +8,7 @@ CREATE TABLE public.delivery_notes (
   UNIQUE(user_id, delivery_note_number)
 );
 ALTER TABLE public.delivery_notes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Delivery notes: owner access" ON public.delivery_notes;
 CREATE POLICY "Delivery notes: owner access" ON public.delivery_notes
   FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
